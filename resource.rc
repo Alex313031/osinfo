@@ -1,0 +1,56 @@
+// Microsoft Visual C++ generated resource script.
+
+#define APSTUDIO_READONLY_SYMBOLS
+
+#ifndef APSTUDIO_INVOKED
+#include "version.h"
+#endif // APSTUDIO_INVOKED
+
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include <windows.h>
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+#include <winres.h>
+
+#ifdef __MINGW32__
+#include <winuser.h>
+#endif // __MINGW32__
+
+#undef APSTUDIO_READONLY_SYMBOLS
+
+// Version Information
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION
+ PRODUCTVERSION MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG // 0x00000010L
+#else // Release mode
+ FILEFLAGS 0x00000000L // Normal?
+#endif  // _DEBUG
+ // Windows NT
+ FILEOS VOS_NT_WINDOWS32 // 0x00040004L
+ FILETYPE VFT_APP // 0x00000001L
+ FILESUBTYPE VFT2_UNKNOWN // 0x00000000L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0" // English Unicode
+        BEGIN
+            VALUE "Comments", "https://github.com/Alex313031/cryocalc"
+            VALUE "CompanyName", "Alex313031"
+            VALUE "FileDescription", "Win32 OS Info DLL"
+            VALUE "FileVersion", OSINFO_VERSION_STRING
+            VALUE "InternalName", "osinfo"
+            VALUE "LegalCopyright", LEGAL_COPYRIGHT
+            VALUE "LegalTrademarks", "BSD-3"
+            VALUE "OriginalFilename", "osinfo.dll"
+            VALUE "ProductName", "osinfo"
+            VALUE "ProductVersion", OSINFO_VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END

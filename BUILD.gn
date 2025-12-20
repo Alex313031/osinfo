@@ -1,0 +1,27 @@
+# Copyright 2025 Alex313031
+
+group("osinfo_dll") {
+  public_deps = [
+    ":osinfo",
+  ]
+}
+
+shared_library("osinfo") {
+  configs += [ ":osinfo_config" ]
+
+  sources = [
+    "export.h",
+    "os_info.cc",
+    "os_info.h",
+    "os_info_dll.h",
+    "resource.rc",
+    "stdafx.h",
+    "version.h",
+  ]
+}
+
+config("osinfo_config") {
+  include_dirs = [
+    "./",
+  ]
+}
