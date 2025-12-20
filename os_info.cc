@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "os_info.h"
 
+unsigned long WinVer;
+unsigned long long WinVerFull;
+
 float concatToFloat(int major, int minor) {
   // Count digits of the fractional part
   int digits = (minor == 0) ? 1 : std::to_string(minor).size();
@@ -64,6 +67,7 @@ DLL_EXPORT bool GetWinNTVersion() {
   } else {
     // Set our extern WinVer
     WinVer = combineToHex(NT_MAJOR, NT_MINOR);
+    WinVerFull = GetRawNTVer();
   }
 
   return success;
@@ -512,7 +516,17 @@ DLL_EXPORT std::wstring const GetWinVersionW() {
 }
 
 DLL_EXPORT unsigned long long const GetRawNTVer() {
-  const unsigned long long retval = 0x0501LL;
+  const unsigned long long retval =
+      (static_cast<unsigned long long>(NT_MAJOR) << 24) |
+      (static_cast<unsigned long long>(NT_MINOR) << 16) |
+      (static_cast<unsigned long long>(NT_BUILD) & 0xFFFFULL);
+  return retval;
+}
+
+DLL_EXPORT unsigned long const GetShortNTVer() {
+  const unsigned long long retval =
+      (static_cast<unsigned long long>(NT_MAJOR) << 8) |
+      (static_cast<unsigned long long>(NT_MINOR));
   return retval;
 }
 

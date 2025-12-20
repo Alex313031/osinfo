@@ -4,6 +4,7 @@ GetOSNameA
 GetOSNameW
 GetOsInfoDllVersionW
 GetRawNTVer
+GetShortNTVer
 GetWinNTVersion
 GetWinVersionA
 GetWinVersionW
