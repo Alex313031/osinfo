@@ -37,7 +37,7 @@ BEGIN
     BEGIN
         BLOCK "040904B0" // English Unicode
         BEGIN
-            VALUE "Comments", "https://github.com/Alex313031/cryocalc"
+            VALUE "Comments", "https://github.com/Alex313031/osinfo"
             VALUE "CompanyName", "Alex313031"
             VALUE "FileDescription", "Win32 OS Info DLL"
             VALUE "FileVersion", OSINFO_VERSION_STRING
