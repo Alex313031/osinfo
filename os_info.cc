@@ -14,7 +14,12 @@ unsigned long combineToHex(unsigned long high, unsigned long low) {
   return (high << 8) | (low & 0xFF);
 }
 
-DLL_EXPORT bool getWinNTVersion() {
+DLL_EXPORT const bool InitOsInfoDll() {
+  const bool ret = GetWinNTVersion();
+  return ret;
+}
+
+DLL_EXPORT bool GetWinNTVersion() {
   bool success = false;
   // Use RtlGetVersion from winnt.h, not wdm.h
   NTSTATUS(WINAPI *RtlGetVersion)(LPOSVERSIONINFOEXW);
@@ -71,7 +76,7 @@ DLL_EXPORT std::string const GetOSNameA() {
   // For obscure versions or pre NT4 SP6
   std::ostringstream debugStream;
 
-  const bool gotNTVersion = getWinNTVersion();
+  const bool gotNTVersion = GetWinNTVersion();
   if (!gotNTVersion) {
     return std::string();
   }
@@ -479,7 +484,7 @@ static std::string const GetNTString() {
   std::string NtVer;
   std::ostringstream debugStream;
 
-  bool gotNTVersion = getWinNTVersion();
+  bool gotNTVersion = GetWinNTVersion();
   if (!gotNTVersion) {
     return std::string();
   }

@@ -6,7 +6,9 @@
 extern "C"{
 
 // Call to init info, but to use helper functions below to get values.
-DLL_EXPORT bool __cdecl getWinNTVersion();
+DLL_EXPORT const bool __cdecl InitOsInfoDll();
+
+DLL_EXPORT bool __cdecl GetWinNTVersion();
 
 DLL_EXPORT std::string const __cdecl GetOSNameA();
 
