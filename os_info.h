@@ -7,6 +7,8 @@ extern unsigned long WinVer;
 
 extern unsigned long long WinVerFull;
 
+extern HINSTANCE gHinstDLL;
+
 namespace {
   static bool is_win11;
   static constexpr unsigned long NTVER_2K = 0x0500L;
@@ -53,6 +55,11 @@ static std::wstring __cdecl StringToWstring(const std::string& str);
 static std::string __cdecl WstringToString(const std::wstring& wstr);
 
 inline void __cdecl NotReachedImpl(std::string func_name);
+
+// Opposite of InitOsInfoDLL, but only to be called privately.
+static const bool DeInitOsInfoDLL();
+
+#define __FUNC__ __func__
 
 #ifndef NOTREACHED
 #define NOTREACHED() \

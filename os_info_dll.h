@@ -5,6 +5,9 @@
 
 extern "C"{
 
+// DLL equivalent of WinMain
+DLL_EXPORT BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
+
 // Call to init info, but to use helper functions below to get values.
 DLL_EXPORT const bool __cdecl InitOsInfoDll();
 

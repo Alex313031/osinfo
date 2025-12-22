@@ -3,6 +3,25 @@
 
 unsigned long WinVer;
 unsigned long long WinVerFull;
+HINSTANCE gHinstDLL;
+
+DLL_EXPORT BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
+  gHinstDLL = hInstDLL;
+
+  if (dwReason == DLL_PROCESS_ATTACH || dwReason == DLL_THREAD_ATTACH) {
+    return InitOsInfoDll();
+  } else if (dwReason == DLL_PROCESS_DETACH) {
+    if (lpvReserved != nullptr) {
+      return TRUE;
+    } else {
+      return DeInitOsInfoDLL();
+    }
+  } else if (dwReason == DLL_THREAD_ATTACH) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
 
 float concatToFloat(int major, int minor) {
   // Count digits of the fractional part
@@ -15,6 +34,12 @@ float concatToFloat(int major, int minor) {
 
 unsigned long combineToHex(unsigned long high, unsigned long low) {
   return (high << 8) | (low & 0xFF);
+}
+
+const bool DeInitOsInfoDLL() {
+  // Todo add memory cleanup here.
+  const bool ret = true;
+  return ret;
 }
 
 DLL_EXPORT const bool InitOsInfoDll() {

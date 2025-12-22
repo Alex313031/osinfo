@@ -1,5 +1,6 @@
 LIBRARY "osinfo.dll"
 EXPORTS
+DllMain@12@12
 GetOSNameA
 GetOSNameW
 GetOsInfoDllVersionW
