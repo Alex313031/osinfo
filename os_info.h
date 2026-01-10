@@ -2,6 +2,7 @@
 #define OSINFO_DLL_OS_INFO_H_
 
 #include "os_info_dll.h"
+#include <winver.h>
 
 extern unsigned long WinVer;
 

@@ -23,6 +23,27 @@ DLL_EXPORT BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvRes
   }
 }
 
+DLL_EXPORT HRESULT WINAPI DllGetVersion(dllgetversioninfo_t* dvi) {
+  switch(dvi->cbSize) {
+    case sizeof(DLLVERSIONINFO2): {
+        dvi->info2.dwFlags = 0;
+        dvi->info2.ullVersion = MAKEDLLVERULL(MAJOR_VERSION,
+                        MINOR_VERSION, BUILD_VERSION, 0);
+    } // no break, fall through for backward compatibility DLLVERSIONINFO
+    case sizeof(DLLVERSIONINFO): {
+      dvi->info1.dwMajorVersion = MAJOR_VERSION;
+      dvi->info1.dwMinorVersion = MINOR_VERSION;
+      dvi->info1.dwBuildNumber = BUILD_VERSION;
+      dvi->info1.dwPlatformID = DLLVER_PLATFORM_NT;
+      return S_OK;
+    }
+    default: {
+      throw std::runtime_error("DllGetVersion: unsupported cbSize");
+      return E_INVALIDARG;
+    }
+  }
+}
+
 float concatToFloat(int major, int minor) {
   // Count digits of the fractional part
   int digits = (minor == 0) ? 1 : std::to_string(minor).size();

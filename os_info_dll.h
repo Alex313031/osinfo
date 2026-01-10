@@ -2,11 +2,24 @@
 #define OSINFO_DLL_OS_INFO_DLL_H_
 
 #include "export.h"
+#include <shlwapi.h>
 
 extern "C"{
 
 // DLL equivalent of WinMain
 DLL_EXPORT BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
+
+/* DllGetVersion accepts pointer to structure determined in runtime
+ * by first DWORD (cbSize). */
+typedef union dllgetversioninfo_union dllgetversioninfo_t;
+union dllgetversioninfo_union {
+  DWORD cbSize;
+  DLLVERSIONINFO info1;
+  DLLVERSIONINFO2 info2;
+};
+
+// Standard version getter function for DLLs
+DLL_EXPORT HRESULT WINAPI DllGetVersion(dllgetversioninfo_t* dvi);
 
 // Call to init info, but to use helper functions below to get values.
 DLL_EXPORT const bool __cdecl InitOsInfoDll();
