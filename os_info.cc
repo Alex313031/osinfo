@@ -5,7 +5,7 @@ unsigned long WinVer;
 unsigned long long WinVerFull;
 HINSTANCE gHinstDLL;
 
-DLL_EXPORT BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
+OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
   gHinstDLL = hInstDLL;
 
   if (dwReason == DLL_PROCESS_ATTACH || dwReason == DLL_THREAD_ATTACH) {
@@ -23,7 +23,7 @@ DLL_EXPORT BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvRes
   }
 }
 
-DLL_EXPORT HRESULT WINAPI DllGetVersion(dllgetversioninfo_t* dvi) {
+OSINFO_API HRESULT WINAPI DllGetVersion(dllgetversioninfo_t* dvi) {
   switch(dvi->cbSize) {
     case sizeof(DLLVERSIONINFO2): {
         dvi->info2.dwFlags = 0;
@@ -63,12 +63,12 @@ const bool DeInitOsInfoDLL() {
   return ret;
 }
 
-DLL_EXPORT const bool InitOsInfoDll() {
+OSINFO_API const bool InitOsInfoDll() {
   const bool ret = GetWinNTVersion();
   return ret;
 }
 
-DLL_EXPORT bool GetWinNTVersion() {
+OSINFO_API bool GetWinNTVersion() {
   bool success = false;
   // Use RtlGetVersion from winnt.h, not wdm.h
   NTSTATUS(WINAPI *RtlGetVersion)(LPOSVERSIONINFOEXW);
@@ -120,7 +120,7 @@ DLL_EXPORT bool GetWinNTVersion() {
 }
 
 // Use WINNT API functions to get OS and system information
-DLL_EXPORT std::string const GetOSNameA() {
+OSINFO_API std::string const GetOSNameA() {
   // Human readable OS name
   std::string OsVer;
   // For obscure versions or pre NT4 SP6
@@ -524,7 +524,7 @@ DLL_EXPORT std::string const GetOSNameA() {
   return OsVer;
 }
 
-DLL_EXPORT std::wstring const GetOSNameW() {
+OSINFO_API std::wstring const GetOSNameW() {
   const std::wstring retval = StringToWstring(GetOSNameA());
   return retval;
 }
@@ -551,17 +551,17 @@ static std::string const GetNTString() {
   return NtVer;
 }
 
-DLL_EXPORT std::string const GetWinVersionA() {
+OSINFO_API std::string const GetWinVersionA() {
   const std::string ver = GetNTString();
   return ver;
 }
 
-DLL_EXPORT std::wstring const GetWinVersionW() {
+OSINFO_API std::wstring const GetWinVersionW() {
   const std::wstring wver = StringToWstring(GetWinVersionA());
   return wver;
 }
 
-DLL_EXPORT unsigned long long const GetRawNTVer() {
+OSINFO_API unsigned long long const GetRawNTVer() {
   const unsigned long long retval =
       (static_cast<unsigned long long>(NT_MAJOR) << 24) |
       (static_cast<unsigned long long>(NT_MINOR) << 16) |
@@ -569,7 +569,7 @@ DLL_EXPORT unsigned long long const GetRawNTVer() {
   return retval;
 }
 
-DLL_EXPORT unsigned long const GetShortNTVer() {
+OSINFO_API unsigned long const GetShortNTVer() {
   const unsigned long long retval =
       (static_cast<unsigned long long>(NT_MAJOR) << 8) |
       (static_cast<unsigned long long>(NT_MINOR));
