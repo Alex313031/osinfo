@@ -58,7 +58,7 @@ static std::string __cdecl WstringToString(const std::wstring& wstr);
 inline void __cdecl NotReachedImpl(std::string func_name);
 
 // Opposite of InitOsInfoDLL, but only to be called privately.
-static const bool DeInitOsInfoDLL();
+static const bool __cdecl DeInitOsInfoDLL();
 
 #define __FUNC__ __func__
 
