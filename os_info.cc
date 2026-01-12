@@ -102,10 +102,11 @@ OSINFO_API bool GetWinNTVersion() {
     NT_MAJOR = osInfo.dwMajorVersion;
     NT_MINOR = osInfo.dwMinorVersion;
     NT_BUILD = osInfo.dwBuildNumber;
-#if _WIN32_WINNT <= 0x0500
-    // Windows 2000 compatible string copy
+#if _WIN32_WINNT <= 0x0500 || defined(__MINGW32__)
+    // Windows 2000 and MinGW compatible string copy function
     lstrcpynW(NT_CSD_VERSION, osInfo.szCSDVersion, 128);
 #else
+    // Safer Windows XP+ MSVS version
     wcscpy_s(NT_CSD_VERSION, osInfo.szCSDVersion);
 #endif
     NT_SP_MAJOR = osInfo.wServicePackMajor;
