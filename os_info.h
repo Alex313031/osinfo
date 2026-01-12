@@ -2,7 +2,10 @@
 #define OSINFO_DLL_OS_INFO_H_
 
 #include "os_info_dll.h"
+
 #include <winver.h>
+
+extern "C" {
 
 extern unsigned long WinVer;
 
@@ -11,16 +14,16 @@ extern unsigned long long WinVerFull;
 extern HINSTANCE gHinstDLL;
 
 namespace {
-  static bool is_win11;
-  static constexpr unsigned long NTVER_2K = 0x0500L;
-  static constexpr unsigned long NTVER_XP = 0x0501L;
-  static constexpr unsigned long NTVER_2K3 = 0x0502L;
-  static constexpr unsigned long NTVER_VISTA = 0x0600L;
-  static constexpr unsigned long NTVER_7 = 0x0601L;
-  static constexpr unsigned long NTVER_8 = 0x0602L;
-  static constexpr unsigned long NTVER_81 = 0x0603L;
-  static constexpr unsigned long NTVER_10 = 0x0A00L;
-  static constexpr unsigned long NTVER_11 = 0x0A00L;
+  bool is_win11;
+  constexpr unsigned long NTVER_2K = 0x0500L;
+  constexpr unsigned long NTVER_XP = 0x0501L;
+  constexpr unsigned long NTVER_2K3 = 0x0502L;
+  constexpr unsigned long NTVER_VISTA = 0x0600L;
+  constexpr unsigned long NTVER_7 = 0x0601L;
+  constexpr unsigned long NTVER_8 = 0x0602L;
+  constexpr unsigned long NTVER_81 = 0x0603L;
+  constexpr unsigned long NTVER_10 = 0x0A00L;
+  constexpr unsigned long NTVER_11 = 0x0A00L;
 }
 
 static ULONG NT_MAJOR;
@@ -67,5 +70,7 @@ static const bool __cdecl DeInitOsInfoDLL();
         std::string func_name(__FUNC__); \
         NotReachedImpl(func_name);
 #endif // NOTREACHED
+
+}
 
 #endif // OSINFO_DLL_OS_INFO_H_

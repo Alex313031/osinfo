@@ -1,8 +1,6 @@
 #ifndef OSINFO_DLL_EXPORT_H_
 #define OSINFO_DLL_EXPORT_H_
 
-#define OSINFO_DLL_EXPORTS
-
 #ifndef DLL_IMPORT
  #define DLL_IMPORT __declspec(dllimport)
 #endif

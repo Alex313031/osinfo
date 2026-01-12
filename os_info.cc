@@ -5,7 +5,7 @@ unsigned long WinVer;
 unsigned long long WinVerFull;
 HINSTANCE gHinstDLL;
 
-OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
+OSINFO_API BOOL __cdecl DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
   gHinstDLL = hInstDLL;
 
   if (dwReason == DLL_PROCESS_ATTACH || dwReason == DLL_THREAD_ATTACH) {
@@ -23,25 +23,34 @@ OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvRes
   }
 }
 
-OSINFO_API HRESULT WINAPI DllGetVersion(dllgetversioninfo_t* dvi) {
-  switch(dvi->cbSize) {
+OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi) {
+  if (pdvi == nullptr) {
+    return E_POINTER;
+  }
+
+  switch(pdvi->cbSize) {
     case sizeof(DLLVERSIONINFO2): {
-        dvi->info2.dwFlags = 0;
-        dvi->info2.ullVersion = MAKEDLLVERULL(MAJOR_VERSION,
-                        MINOR_VERSION, BUILD_VERSION, 0);
+      // Caller passed DLLVERSIONINFO2 - fill extended fields
+      DLLVERSIONINFO2* pdvi2 = reinterpret_cast<DLLVERSIONINFO2*>(pdvi);
+      pdvi2->dwFlags = 0;
+      pdvi2->ullVersion = MAKEDLLVERULL(MAJOR_VERSION, MINOR_VERSION,
+                                        BUILD_VERSION, 0);
     } // no break, fall through for backward compatibility DLLVERSIONINFO
     case sizeof(DLLVERSIONINFO): {
-      dvi->info1.dwMajorVersion = MAJOR_VERSION;
-      dvi->info1.dwMinorVersion = MINOR_VERSION;
-      dvi->info1.dwBuildNumber = BUILD_VERSION;
-      dvi->info1.dwPlatformID = DLLVER_PLATFORM_NT;
+      // Fill base DLLVERSIONINFO fields
+      pdvi->dwMajorVersion = MAJOR_VERSION;
+      pdvi->dwMinorVersion = MINOR_VERSION;
+      pdvi->dwBuildNumber = BUILD_VERSION;
+      pdvi->dwPlatformID = DLLVER_PLATFORM_NT;
       return S_OK;
     }
     default: {
       throw std::runtime_error("DllGetVersion: unsupported cbSize");
-      return E_INVALIDARG;
+      break;
     }
   }
+  // cbSize too small - unsupported structure
+  return E_INVALIDARG;
 }
 
 float concatToFloat(int major, int minor) {

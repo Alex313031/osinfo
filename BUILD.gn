@@ -21,6 +21,7 @@ shared_library("osinfo") {
 }
 
 config("osinfo_config") {
+  defines = [ "OSINFO_DLL_EXPORTS=1", ]
   include_dirs = [
     "./",
   ]
