@@ -45,6 +45,22 @@ OSINFO_API unsigned long long const __cdecl GetRawNTVer();
 // the NT build number. For example, for Windows 7 SP1, it would return 0x601.
 OSINFO_API unsigned long const __cdecl GetShortNTVer();
 
+// Pre-defined Typedefs for dynamically accessing
+// osinfo.dll functions using GetProcAddress
+typedef std::string (*GetOSNameA_t)();
+
+typedef std::wstring (*GetOSNameW_t)();
+
+typedef std::string (*GetWinVersionA_t)();
+
+typedef std::wstring (*GetWinVersionW_t)();
+
+typedef unsigned long long (*GetRawNTVer_t)();
+
+typedef unsigned long (*GetShortNTVer_t)();
+
+typedef std::wstring (*GetOsInfoDllVersionW_t)();
+
 }
 
 #endif // OSINFO_DLL_OS_INFO_DLL_H_
