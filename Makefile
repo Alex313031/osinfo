@@ -32,7 +32,7 @@ DLL_OBJ_CPP  := $(DLL_CPP:.cc=.o)
 DLL_OBJ_RC   := $(DLL_RC:.rc=.res)
 
 # Compiler flags #
-DEFINES  := -DUNICODE -D_UNICODE -D_WINDOWS -DWINVER=0x0500 -D_WIN32_WINNT=0x0500 -D_WIN64_WINNT=0x0502 -D_WIN32_IE=0x501
+DEFINES  := -DUNICODE -D_UNICODE -D_WINDOWS -DWINVER=0x0500 -D_WIN32_WINNT=0x0500 -D_WIN64_WINNT=0x0502 -D_WIN32_IE=0x501 -DOSINFO_DLL_EXPORTS=1
 # Project-specific include dirs
 #INCLUDE_DIRS = -Iosinfo
 # Show all errors, compile everything static, ensure src dir is included, -municode
