@@ -1,7 +1,16 @@
 #ifndef OSINFO_DLL_VERSION_H_
 #define OSINFO_DLL_VERSION_H_
 
-#ifdef __clang__
+// We need to define _UNICODE and UNICODE for TCHAR
+#ifndef UNICODE
+ #define UNICODE
+#endif
+
+#ifndef _UNICODE
+ #define _UNICODE
+#endif
+
+#if  defined(__clang__) && defined(_UNICODE)
  #pragma code_page(65001) // UTF-8
 #endif // __clang__
 
@@ -29,9 +38,11 @@
  #define _WIN32_IE 0x0501 // Minimum Internet Explorer version for common controls
 #endif // _WIN32_IE
 
-#ifndef _ATL_XP_TARGETING
- #define _ATL_XP_TARGETING // For using XP-compatible ATL/MFC functions
-#endif // _ATL_XP_TARGETING
+#if _WIN32_WINNT <= 0x0600 // If we are less than Windows 7, use old ATL for safety
+ #ifndef _ATL_XP_TARGETING
+  #define _ATL_XP_TARGETING // For using XP-compatible ATL/MFC functions
+ #endif // _ATL_XP_TARGETING
+#endif // _WIN32_WINNT <= 0x0600
 
 #ifndef __MINGW32__
  #include <SDKDDKVer.h> // Doesn't exist in MinGW
