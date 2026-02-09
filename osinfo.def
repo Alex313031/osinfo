@@ -16,3 +16,14 @@ GetWinNTVersion
 GetWinVersionA
 GetWinVersionW
 InitOsInfoDll
+IsAtLeast
+IsWin10
+IsWin11
+IsWin2003
+IsWin2K
+IsWin7
+IsWin8
+IsWin8_1
+IsWinNT4
+IsWinVista
+IsWinXP

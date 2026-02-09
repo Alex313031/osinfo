@@ -1,9 +1,21 @@
 #include "stdafx.h"
 #include "os_info.h"
 
+HINSTANCE gHinstDLL;
+
 unsigned long WinVer;
 unsigned long long WinVerFull;
-HINSTANCE gHinstDLL;
+
+bool is_winnt = false;
+bool is_win2k = false;
+bool is_winxp = false;
+bool is_win03 = false;
+bool is_win06 = false;
+bool is_win7 = false;
+bool is_win8 = false;
+bool is_win81 = false;
+bool is_win10 = false;
+bool is_win11 = false;
 
 OSINFO_API BOOL __cdecl DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
   gHinstDLL = hInstDLL;
@@ -68,8 +80,9 @@ unsigned long combineToHex(unsigned long high, unsigned long low) {
 
 const bool DeInitOsInfoDLL() {
   // Todo add memory cleanup here.
-  const bool ret = true;
-  return ret;
+  WinVer = 0u;
+  WinVerFull = 0u;
+  return (WinVer == 0u && WinVerFull == 0u);
 }
 
 OSINFO_API const bool InitOsInfoDll() {
@@ -119,11 +132,48 @@ OSINFO_API bool GetWinNTVersion() {
   }
 
   if (!success) {
-    MessageBoxW(nullptr, L"Failed to get Windows version!", L"Error!", MB_ICONSTOP);
+    MessageBoxW(nullptr, L"Failed to get Windows version!", L"OS Info Error!", MB_ICONSTOP);
   } else {
     // Set our extern WinVer
     WinVer = combineToHex(NT_MAJOR, NT_MINOR);
     WinVerFull = GetRawNTVer();
+    switch (WinVer) {
+      case NTVER_40:
+        is_winnt = true;
+        break;
+      case NTVER_2K:
+        is_win2k = true;
+        break;
+      case NTVER_XP:
+        is_winxp = true;
+        break;
+      case NTVER_2K3:
+        is_win03 = true;
+        break;
+      case NTVER_VISTA:
+        is_win06 = true;
+        break;
+      case NTVER_7:
+        is_win7 = true;
+        break;
+      case NTVER_8:
+        is_win8 = true;
+        break;
+      case NTVER_81:
+        is_win81 = true;
+        break;
+      case NTVER_10: {
+        if (NT_BUILD > 20348) {
+          is_win11 = true;
+        } else {
+          is_win10 = true;
+        }
+      } break;
+      default:
+        success = false;
+        MessageBoxW(nullptr, L"Failed to set Windows version.", L"OS Info Error!", MB_ICONSTOP);
+        break;
+    }
   }
 
   return success;
@@ -238,11 +288,6 @@ OSINFO_API std::string const GetOSNameA() {
     }
     // No such thing as feature releases for Windows 8.1 and below
   } else if (NT_MAJOR >= 10) {
-    if (NT_BUILD > 19045) {
-      is_win11 = true;
-    } else {
-      is_win11 = false;
-    }
 
     if (NT_BUILD < 10240) {
       NT_FEATURE_VERSION = "Beta Threshold Build ";
@@ -664,4 +709,40 @@ const std::wstring GetOsInfoDllVersionW() {
   wostr << OSINFO_VERSION_STRING;
   const std::wstring retval = wostr.str();
   return retval;
+}
+
+OSINFO_API const bool IsWinNT4() {
+  return is_winnt;
+}
+OSINFO_API const bool IsWin2K() {
+  return is_win2k;
+}
+OSINFO_API const bool IsWinXP() {
+  return is_winxp;
+}
+OSINFO_API const bool IsWin2003() {
+  return is_win03;
+}
+OSINFO_API const bool IsWinVista() {
+  return is_win06;
+}
+OSINFO_API const bool IsWin7() {
+  return is_win7;
+}
+OSINFO_API const bool IsWin8() {
+  return is_win8;
+}
+OSINFO_API const bool IsWin8_1() {
+  return is_win81;
+}
+OSINFO_API const bool IsWin10() {
+  return is_win10;
+}
+OSINFO_API const bool IsWin11() {
+  return is_win11;
+}
+
+const bool IsAtLeast(const unsigned long check_ver) {
+  const bool is_ver = WinVer >= check_ver;
+  return is_ver;
 }

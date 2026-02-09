@@ -13,8 +13,19 @@ extern unsigned long long WinVerFull;
 
 extern HINSTANCE gHinstDLL;
 
+extern bool is_winnt; 
+extern bool is_win2k; 
+extern bool is_winxp; 
+extern bool is_win03; 
+extern bool is_win06; 
+extern bool is_win7; 
+extern bool is_win8; 
+extern bool is_win81; 
+extern bool is_win10; 
+extern bool is_win11; 
+
 namespace {
-  bool is_win11;
+  constexpr unsigned long NTVER_40 = 0x0400L;
   constexpr unsigned long NTVER_2K = 0x0500L;
   constexpr unsigned long NTVER_XP = 0x0501L;
   constexpr unsigned long NTVER_2K3 = 0x0502L;
