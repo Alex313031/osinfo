@@ -704,7 +704,7 @@ inline void NotReachedImpl(std::string func_name) {
   ImmediateDebugCrash();
 }
 
-const std::wstring GetOsInfoDllVersionW() {
+OSINFO_API const std::wstring GetOsInfoDllVersionW() {
   std::wostringstream wostr;
   wostr << OSINFO_VERSION_STRING;
   const std::wstring retval = wostr.str();
@@ -742,7 +742,22 @@ OSINFO_API const bool IsWin11() {
   return is_win11;
 }
 
-const bool IsAtLeast(const unsigned long check_ver) {
+OSINFO_API const bool IsAtLeast(const unsigned long check_ver) {
   const bool is_ver = WinVer >= check_ver;
+  return is_ver;
+}
+
+OSINFO_API const bool IsWin(const unsigned long check_ver) {
+  const bool is_ver = WinVer == check_ver;
+  return is_ver;
+}
+
+OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver) {
+  const bool is_ver = WinVer > check_ver;
+  return is_ver;
+}
+
+OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver) {
+  const bool is_ver = WinVer < check_ver;
   return is_ver;
 }

@@ -63,8 +63,8 @@
 // These next few lines are where we control version number and copyright year
 // Adhere to semver > semver.org
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 4
-#define BUILD_VERSION 1
+#define MINOR_VERSION 5
+#define BUILD_VERSION 2
 
 #ifndef OSINFO_VERSION_STRING
  #define OSINFO_VERSION_STRING _VERSION(MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION)

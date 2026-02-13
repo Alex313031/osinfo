@@ -66,8 +66,17 @@ inline constexpr unsigned long kWinBlue = kWin81;
 inline constexpr unsigned long kWin10 = 0x0A00L;
 inline constexpr unsigned long kWin11 = kWin10;
 
-// Bool to check if windows version is at least the one passed (or higher)
+// Bool to check if Windows version is exactly the one passed in check_ver
+OSINFO_API const bool IsWin(const unsigned long check_ver);
+
+// Checks if Windows version is at least the one passed (or higher) in check_ver
 OSINFO_API const bool IsAtLeast(const unsigned long check_ver);
+
+// Checks if Windows version is newer than the one passed in check_ver
+OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver);
+
+// Checks if Windows version is older than the one passed in check_ver
+OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver);
 
 /* Simple bool functions for getting if is a specific version */
 OSINFO_API const bool IsWinNT4();
