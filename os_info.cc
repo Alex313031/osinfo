@@ -102,8 +102,8 @@ OSINFO_API bool GetWinNTVersion() {
 
   // Get and run ntdll.dll function pointer to RtlGetVersion()
   if (NtDllModule && NtDllModule != nullptr) {
-    *reinterpret_cast<FARPROC*>(&RtlGetVersion) =
-        GetProcAddress(NtDllModule, "RtlGetVersion");
+    FARPROC proc = GetProcAddress(NtDllModule, "RtlGetVersion");
+    memcpy(&RtlGetVersion, &proc, sizeof(proc));
   } else {
     RtlGetVersion = nullptr;
   }
