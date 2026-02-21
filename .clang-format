@@ -53,7 +53,10 @@ NamespaceIndentation: All
 SpaceAfterCStyleCast: false
 
 # Allow Macros to be spaced how we like
-AlignConsecutiveMacros: false
+AlignConsecutiveMacros: true
+
+# Indent PP directives like #if and #define
+IndentPPDirectives: BeforeHash
 
 # Should never use tab chars
 UseTab: Never
