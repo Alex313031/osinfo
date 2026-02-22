@@ -17,7 +17,9 @@ MaxEmptyLinesToKeep: 1
 SpacesBeforeTrailingComments: 1
 
 # Align multiple trailing comments for readability
-AlignTrailingComments: true
+AlignTrailingComments:
+  Kind: Never
+  OverEmptyLines: 2
 
 # Leave comments alone, some are longer than 80 lines
 ReflowComments: false
@@ -30,6 +32,18 @@ InsertBraces: true
 
 # Always insert newline
 InsertNewlineAtEOF: true
+
+AllowShortIfStatementsOnASingleLine: WithoutElse
+
+AllowShortBlocksOnASingleLine: Empty
+
+AllowShortEnumsOnASingleLine: true
+
+AllowShortFunctionsOnASingleLine: InlineOnly
+
+AllowShortLoopsOnASingleLine: false
+
+ContinuationIndentWidth: 4
 
 # Don't use compact namespaces like Chromium
 CompactNamespaces: false
@@ -53,10 +67,13 @@ NamespaceIndentation: All
 SpaceAfterCStyleCast: false
 
 # Allow Macros to be spaced how we like
-AlignConsecutiveMacros: true
+AlignConsecutiveMacros: false
 
-# Indent PP directives like #if and #define
+# Indent PreProcessor directives like #if and #define
 IndentPPDirectives: BeforeHash
+
+# Indent 1 space, not 2 for PreProcessor directives
+PPIndentWidth: 1
 
 # Should never use tab chars
 UseTab: Never
