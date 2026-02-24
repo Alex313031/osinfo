@@ -10,9 +10,9 @@
  #define _UNICODE
 #endif
 
-#if  defined(__clang__) && defined(_UNICODE)
+#if defined(__clang__) && defined(_UNICODE)
  #pragma code_page(65001) // UTF-8
-#endif // __clang__
+#endif
 
 // This file is for specifying the target windows version, as well as application
 // version constants.
@@ -23,36 +23,42 @@
 
 #ifndef __MINGW32__
  #include <WinSDKVer.h> // Doesn't exist in MinGW
-#endif // __MINGW32__
+#endif
 
 #ifndef _WIN32_WINNT
  #define _WIN32_WINNT 0x0500 // Windows 2000
-#endif // _WIN32_WINNT
+#endif
+
 #ifndef WINVER
- #define WINVER 0x0500 // Same as above
-#endif // WINVER
+ #define WINVER 0x0500 // Same as _WIN32_WINNT above
+#endif
+
 #ifndef _WIN64_WINNT
  #define _WIN64_WINNT 0x0502 // Minimum version for 64 bit, Windows Server 2003
-#endif // _WIN64_WINNT
+#endif
+
 #ifndef _WIN32_IE
  #define _WIN32_IE 0x0501 // Minimum Internet Explorer version for common controls
-#endif // _WIN32_IE
+#endif
 
-#if _WIN32_WINNT <= 0x0600 // If we are less than Windows 7, use old ATL for safety
+#if _WIN32_WINNT < 0x0601   // If we are less than Windows 7, use old ATL for safety
  #ifndef _ATL_XP_TARGETING
-  #define _ATL_XP_TARGETING // For using XP-compatible ATL/MFC functions
- #endif // _ATL_XP_TARGETING
-#endif // _WIN32_WINNT <= 0x0600
+  #define _ATL_XP_TARGETING  // For using XP-compatible ATL/MFC functions
+ #endif
+#endif
 
 #ifndef __MINGW32__
  #include <SDKDDKVer.h> // Doesn't exist in MinGW
-#endif // __MINGW32__
+#endif
+
+// clang-format off: Version DEFINES left alone
 
 // Macro to convert to string
-#if !defined(_STRINGIZER) && !defined(STRINGIZE)
+#if !defined(_STRINGIZER_)
+ #define _STRINGIZER_
  #define _STRINGIZER(in) #in
  #define STRINGIZE(in) _STRINGIZER(in)
-#endif // !defined(_STRINGIZER) && !defined(STRINGIZE)
+#endif // !defined(_STRINGIZER_)
 
 // Main version constant
 #ifndef _VERSION
@@ -70,5 +76,6 @@
  #define OSINFO_VERSION_STRING _VERSION(MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION)
  #define LEGAL_COPYRIGHT L"\251 2025-2026 Alex313031" // \251 is the © symbol
 #endif // OSINFO_VERSION_STRING
+// clang-format on
 
 #endif // OSINFO_DLL_VERSION_H_

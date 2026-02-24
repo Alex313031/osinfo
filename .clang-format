@@ -53,13 +53,15 @@ SpacesInSquareBrackets: false
 NamespaceIndentation: All
  # No spaces between C casts
 SpaceAfterCStyleCast: false
- # Allign consecutive macros, sometimes annoying
+ # Whether to align after open function brackets for long params
+AlignAfterOpenBracket: Align
+ # Align consecutive macros, sometimes annoying
 AlignConsecutiveMacros: true
- # ALign consecutive variable assignments
+ # Align consecutive variable assignments
 AlignConsecutiveAssignments:
   Enabled: true
   AcrossEmptyLines: false
-  AcrossComments: true
+  AcrossComments: false
  # Align bitfields too, what all are bitfields?
 AlignConsecutiveBitFields:
   Enabled: true

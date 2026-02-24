@@ -1,8 +1,9 @@
 #ifndef OSINFO_DLL_OS_INFO_DLL_H_
 #define OSINFO_DLL_OS_INFO_DLL_H_
 
-#include "export.h"
 #include <shlwapi.h>
+
+#include "export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,23 +49,23 @@ OSINFO_API unsigned long long const __cdecl GetRawNTVer();
 OSINFO_API unsigned long const __cdecl GetShortNTVer();
 
 // USE THESE for the below IsAtLeast() function;
-inline constexpr unsigned long kWinNT4 = 0x0400L;
-inline constexpr unsigned long kWin2000 = 0x0500L;
-inline constexpr unsigned long kWin2K = kWin2000;
-inline constexpr unsigned long kWinXP = 0x0501L;
-inline constexpr unsigned long kWinSrv2003 = 0x0502L;
-inline constexpr unsigned long kWinXPx64 = kWinSrv2003;
-inline constexpr unsigned long kWinVista = 0x0600L;
-inline constexpr unsigned long kWinSrv2008 = kWinVista;
-inline constexpr unsigned long kWin7 = 0x0601L;
+inline constexpr unsigned long kWinNT4       = 0x0400L;
+inline constexpr unsigned long kWin2000      = 0x0500L;
+inline constexpr unsigned long kWin2K        = kWin2000;
+inline constexpr unsigned long kWinXP        = 0x0501L;
+inline constexpr unsigned long kWinSrv2003   = 0x0502L;
+inline constexpr unsigned long kWinXPx64     = kWinSrv2003;
+inline constexpr unsigned long kWinVista     = 0x0600L;
+inline constexpr unsigned long kWinSrv2008   = kWinVista;
+inline constexpr unsigned long kWin7         = 0x0601L;
 inline constexpr unsigned long kWinSrv2008R2 = kWin7;
-inline constexpr unsigned long kWin8 = 0x0602L;
-inline constexpr unsigned long kWinSrv2012 = kWin8;
-inline constexpr unsigned long kWin81 = 0x0603L;
+inline constexpr unsigned long kWin8         = 0x0602L;
+inline constexpr unsigned long kWinSrv2012   = kWin8;
+inline constexpr unsigned long kWin81        = 0x0603L;
 inline constexpr unsigned long kWinSrv2012R2 = kWin81;
-inline constexpr unsigned long kWinBlue = kWin81;
-inline constexpr unsigned long kWin10 = 0x0A00L;
-inline constexpr unsigned long kWin11 = kWin10;
+inline constexpr unsigned long kWinBlue      = kWin81;
+inline constexpr unsigned long kWin10        = 0x0A00L;
+inline constexpr unsigned long kWin11        = kWin10;
 
 // Bool to check if Windows version is exactly the one passed in check_ver
 OSINFO_API const bool IsWin(const unsigned long check_ver);
