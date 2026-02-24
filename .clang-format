@@ -1,81 +1,75 @@
-# Base on Chromium's C++ style, could change to LLVM
+ # Base on Chromium's C++ style, could change to LLVM
 BasedOnStyle: Chromium
-
-# Only for C++
-Language: Cpp
-
-# Global line length limit
-ColumnLimit: 100
-
-# General indent width
-IndentWidth: 2
-
-# Don't allow more than 1 empty line
-MaxEmptyLinesToKeep: 1
-
-# 1 space before trailing comments
-SpacesBeforeTrailingComments: 1
-
-# Align multiple trailing comments for readability
-AlignTrailingComments:
-  Kind: Never
-  OverEmptyLines: 2
-
-# Leave comments alone, some are longer than 80 lines
-ReflowComments: false
-
-# Use C++ 11
+ # Use C++ 11
 Standard: Cpp11
-
-# Braces for everything
-InsertBraces: true
-
-# Always insert newline
-InsertNewlineAtEOF: true
-
-AllowShortIfStatementsOnASingleLine: WithoutElse
-
-AllowShortBlocksOnASingleLine: Empty
-
-AllowShortEnumsOnASingleLine: true
-
-AllowShortFunctionsOnASingleLine: InlineOnly
-
-AllowShortLoopsOnASingleLine: false
-
-ContinuationIndentWidth: 4
-
-# Don't use compact namespaces like Chromium
-CompactNamespaces: false
-
 # Modern braced lists
 Cpp11BracedListStyle: true
-
-# std::string* str
+ # Only for C++
+Language: Cpp
+ # Always insert newline
+InsertNewlineAtEOF: true
+ # Global line length limit
+ColumnLimit: 100
+ # General indent width
+IndentWidth: 2
+ # Don't allow more than 1 empty line
+MaxEmptyLinesToKeep: 1
+ # 1 space before trailing comments
+SpacesBeforeTrailingComments: 1
+ # Reflow comments longer than ColumnLimit
+ReflowComments: true
+ # Align multiple trailing comments for readability
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 1
+ # Enforce one space and one space only after // comment prefix
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: 1
+ # Braces for everything
+InsertBraces: true
+ # Add namespace closing comment
+FixNamespaceComments: true
+ # Allow short namespaces up to 3 lines without closing comment
+ShortNamespaceLines: 3
+ # Allow short if statements on single line if no else in statement
+AllowShortIfStatementsOnASingleLine: WithoutElse
+ # Short code blocks on single line
+AllowShortBlocksOnASingleLine: Empty
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortLoopsOnASingleLine: false
+ # After line continuation
+ContinuationIndentWidth: 4
+ # Don't use compact namespaces like Chromium
+CompactNamespaces: false
+ # std::string* str
 PointerAlignment: Left
-
-# No C style spaces cluttering things
+ # No C style spaces cluttering things
 SpacesInParentheses: false
-
-# Arrays don't have padding spaces
+ # Arrays don't have padding spaces
 SpacesInSquareBrackets: false
-
-# Always indent namespaces
+ # Always indent namespaces
 NamespaceIndentation: All
-
-# No spaces between C casts
+ # No spaces between C casts
 SpaceAfterCStyleCast: false
-
-# Allow Macros to be spaced how we like
-AlignConsecutiveMacros: false
-
-# Indent PreProcessor directives like #if and #define
+ # Allign consecutive macros, sometimes annoying
+AlignConsecutiveMacros: true
+ # ALign consecutive variable assignments
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+ # Align bitfields too, what all are bitfields?
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+ # Indent PreProcessor directives like #if and #define
 IndentPPDirectives: BeforeHash
-
-# Indent 1 space, not 2 for PreProcessor directives
+ # Indent 1 space, not 2 for PreProcessor directives
 PPIndentWidth: 1
-
-# Should never use tab chars
+ # Should never use tab chars
 UseTab: Never
 
 # Sort #includes by following
