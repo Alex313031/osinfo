@@ -17,6 +17,7 @@
  #define __FUNC__ __func__
 #endif
 
+// clang-format off
 // Windows Header Files
 #include <windows.h>  // Main Windows header
 #include <winternl.h> // Main Windows header
@@ -24,7 +25,8 @@
 #include <commctrl.h> // Common controls header
 #include <mmsystem.h> // For playing sounds
 #include <ntstatus.h> // For NTSTATUS
-#include <tchar.h> // For TCHAR, and automatically deducing wchar_t type
+#include <tchar.h>    // For TCHAR, and automatically deducing wchar_t type
+// clang-format on
 
 // C++ STL Headers
 #include <cmath>     // For C-style math functions

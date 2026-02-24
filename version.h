@@ -43,7 +43,7 @@
 
 #if _WIN32_WINNT < 0x0601   // If we are less than Windows 7, use old ATL for safety
  #ifndef _ATL_XP_TARGETING
-  #define _ATL_XP_TARGETING  // For using XP-compatible ATL/MFC functions
+  #define _ATL_XP_TARGETING // For using XP-compatible ATL/MFC functions
  #endif
 #endif
 
