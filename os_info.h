@@ -4,6 +4,7 @@
 #include <winver.h>
 
 #include "os_info_dll.h"
+#include "stdafx.h"
 
 extern "C" {
 

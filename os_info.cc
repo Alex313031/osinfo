@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "os_info.h"
 
 HINSTANCE gHinstDLL;
@@ -11,8 +10,8 @@ bool is_win2k = false;
 bool is_winxp = false;
 bool is_win03 = false;
 bool is_win06 = false;
-bool is_win7 = false;
-bool is_win8 = false;
+bool is_win7  = false;
+bool is_win8  = false;
 bool is_win81 = false;
 bool is_win10 = false;
 bool is_win11 = false;
@@ -40,20 +39,19 @@ OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi) {
     return E_POINTER;
   }
 
-  switch(pdvi->cbSize) {
+  switch (pdvi->cbSize) {
     case sizeof(DLLVERSIONINFO2): {
       // Caller passed DLLVERSIONINFO2 - fill extended fields
       DLLVERSIONINFO2* pdvi2 = reinterpret_cast<DLLVERSIONINFO2*>(pdvi);
-      pdvi2->dwFlags = 0;
-      pdvi2->ullVersion = MAKEDLLVERULL(MAJOR_VERSION, MINOR_VERSION,
-                                        BUILD_VERSION, 0);
+      pdvi2->dwFlags         = 0;
+      pdvi2->ullVersion      = MAKEDLLVERULL(MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION, 0);
     } // no break, fall through for backward compatibility DLLVERSIONINFO
     case sizeof(DLLVERSIONINFO): {
       // Fill base DLLVERSIONINFO fields
       pdvi->dwMajorVersion = MAJOR_VERSION;
       pdvi->dwMinorVersion = MINOR_VERSION;
-      pdvi->dwBuildNumber = BUILD_VERSION;
-      pdvi->dwPlatformID = DLLVER_PLATFORM_NT;
+      pdvi->dwBuildNumber  = BUILD_VERSION;
+      pdvi->dwPlatformID   = DLLVER_PLATFORM_NT;
       return S_OK;
     }
     default: {
@@ -80,7 +78,7 @@ unsigned long combineToHex(unsigned long high, unsigned long low) {
 
 const bool DeInitOsInfoDLL() {
   // Todo add memory cleanup here.
-  WinVer = 0u;
+  WinVer     = 0u;
   WinVerFull = 0u;
   return (WinVer == 0u && WinVerFull == 0u);
 }
@@ -93,7 +91,7 @@ OSINFO_API const bool InitOsInfoDll() {
 OSINFO_API bool GetWinNTVersion() {
   bool success = false;
   // Use RtlGetVersion from winnt.h, not wdm.h
-  NTSTATUS(WINAPI *RtlGetVersion)(LPOSVERSIONINFOEXW);
+  NTSTATUS(WINAPI * RtlGetVersion)(LPOSVERSIONINFOEXW);
   // https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-osversioninfoexw
   OSVERSIONINFOEXW osInfo;
 
@@ -124,9 +122,9 @@ OSINFO_API bool GetWinNTVersion() {
 #endif
     NT_SP_MAJOR = osInfo.wServicePackMajor;
     NT_SP_MINOR = osInfo.wServicePackMinor;
-    NT_SUITE = osInfo.wSuiteMask;
-    NT_TYPE = osInfo.wProductType;
-    success = true;
+    NT_SUITE    = osInfo.wSuiteMask;
+    NT_TYPE     = osInfo.wProductType;
+    success     = true;
   } else {
     success = false;
   }
@@ -135,7 +133,7 @@ OSINFO_API bool GetWinNTVersion() {
     MessageBoxW(nullptr, L"Failed to get Windows version!", L"OS Info Error!", MB_ICONSTOP);
   } else {
     // Set our extern WinVer
-    WinVer = combineToHex(NT_MAJOR, NT_MINOR);
+    WinVer     = combineToHex(NT_MAJOR, NT_MINOR);
     WinVerFull = GetRawNTVer();
     switch (WinVer) {
       case NTVER_40:
@@ -205,7 +203,7 @@ OSINFO_API std::string const GetOSNameA() {
     NT_SP = SP;
   }
   NT_SERVICE_PACK = WstringToString(NT_SP);
-  
+
   if (NT_MAJOR <= 3) {
     NT_FEATURE_VERSION = NT_SERVICE_PACK;
   }
@@ -226,69 +224,68 @@ OSINFO_API std::string const GetOSNameA() {
   } else if (NT_MAJOR == 5) {
     switch (NT_MINOR) {
       case 0:
-          if (NT_BUILD > 1386 && NT_BUILD < 2195) {
-            NT_FEATURE_VERSION = " Beta Win2K Build";
-          }
-          break;
+        if (NT_BUILD > 1386 && NT_BUILD < 2195) {
+          NT_FEATURE_VERSION = " Beta Win2K Build";
+        }
+        break;
       case 1:
-          if (NT_BUILD > 2196 && NT_BUILD < 2600) {
-            NT_FEATURE_VERSION = " Beta Whistler Build";
-          }
-          if (NT_BUILD == 2700) {
-            NT_FEATURE_VERSION = " MCE 2005";
-          }
-          if (NT_BUILD == 2710) {
-            NT_FEATURE_VERSION = " MCE 2005 Update Rollup 2";
-          }
-          break;
+        if (NT_BUILD > 2196 && NT_BUILD < 2600) {
+          NT_FEATURE_VERSION = " Beta Whistler Build";
+        }
+        if (NT_BUILD == 2700) {
+          NT_FEATURE_VERSION = " MCE 2005";
+        }
+        if (NT_BUILD == 2710) {
+          NT_FEATURE_VERSION = " MCE 2005 Update Rollup 2";
+        }
+        break;
       case 2:
-          if (NT_BUILD > 2228 && NT_BUILD < 3790) {
-            NT_FEATURE_VERSION = " Beta Whistler Build";
+        if (NT_BUILD > 2228 && NT_BUILD < 3790) {
+          NT_FEATURE_VERSION = " Beta Whistler Build";
+        }
+        if (NT_SUITE == VER_SUITE_WH_SERVER) {
+          if (NT_BUILD > 1282 && NT_BUILD < 3790) {
+            NT_FEATURE_VERSION = " Beta Quattro Build";
           }
-          if (NT_SUITE == VER_SUITE_WH_SERVER) {
-            if (NT_BUILD > 1282 && NT_BUILD < 3790) {
-              NT_FEATURE_VERSION = " Beta Quattro Build";
-            }
-          }
-          break;
+        }
+        break;
       case 5:
         NT_FEATURE_VERSION = " (Neptune)";
         break;
       default:
-          NT_FEATURE_VERSION = NT_SERVICE_PACK;
-          break;
+        NT_FEATURE_VERSION = NT_SERVICE_PACK;
+        break;
     }
   } else if (NT_MAJOR == 6) {
     switch (NT_MINOR) {
       case 0:
-          if (NT_BUILD > 3663 && NT_BUILD < 6000) {
-            NT_FEATURE_VERSION = " Beta Longhorn Build";
-          } else if (NT_BUILD == 6003) {
-            NT_FEATURE_VERSION = " KB4489887";
-          }
-          break;
+        if (NT_BUILD > 3663 && NT_BUILD < 6000) {
+          NT_FEATURE_VERSION = " Beta Longhorn Build";
+        } else if (NT_BUILD == 6003) {
+          NT_FEATURE_VERSION = " KB4489887";
+        }
+        break;
       case 1:
-          if (NT_BUILD > 6429 && NT_BUILD < 7600) {
-            NT_FEATURE_VERSION = " Beta Win7 Build";
-          }
-          break;
+        if (NT_BUILD > 6429 && NT_BUILD < 7600) {
+          NT_FEATURE_VERSION = " Beta Win7 Build";
+        }
+        break;
       case 2:
-          if (NT_BUILD > 7652 && NT_BUILD < 9200) {
-            NT_FEATURE_VERSION = " Beta Win8 Build";
-          }
-          break;
+        if (NT_BUILD > 7652 && NT_BUILD < 9200) {
+          NT_FEATURE_VERSION = " Beta Win8 Build";
+        }
+        break;
       case 3:
-          if (NT_BUILD > 9255 && NT_BUILD < 9600) {
-            NT_FEATURE_VERSION = " Beta Blue Build";
-          }
-          break;
+        if (NT_BUILD > 9255 && NT_BUILD < 9600) {
+          NT_FEATURE_VERSION = " Beta Blue Build";
+        }
+        break;
       default:
-          NT_FEATURE_VERSION = NT_SERVICE_PACK;
-          break;
+        NT_FEATURE_VERSION = NT_SERVICE_PACK;
+        break;
     }
     // No such thing as feature releases for Windows 8.1 and below
   } else if (NT_MAJOR >= 10) {
-
     if (NT_BUILD < 10240) {
       NT_FEATURE_VERSION = "Beta Threshold Build ";
     } else if (NT_BUILD == 10240) {
@@ -349,224 +346,216 @@ OSINFO_API std::string const GetOSNameA() {
     // Known to be buggy on NT 4.0, and needs SP6 to work
     switch (NT_MINOR) {
       case 0:
-          if (NT_TYPE == VER_NT_WORKSTATION) {
-            OsVer = "Windows NT 4.0 Workstation ";
-          } else {
-            if (NT_SUITE == VER_SUITE_TERMINAL) {
+        if (NT_TYPE == VER_NT_WORKSTATION) {
+          OsVer = "Windows NT 4.0 Workstation ";
+        } else {
+          if (NT_SUITE == VER_SUITE_TERMINAL) {
             OsVer = "Windows NT 4.0 Terminal Server ";
-            } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-              OsVer = "Windows NT 4.0 Enterprise Server ";
-            } else {
-              OsVer = "Windows NT 4.0 Server ";
-            }
+          } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
+            OsVer = "Windows NT 4.0 Enterprise Server ";
+          } else {
+            OsVer = "Windows NT 4.0 Server ";
           }
-          break;
+        }
+        break;
       default:
-          debugStream.str("");
-          debugStream.clear();
-          debugStream << " Unknown Windows "
-                      << NT_MAJOR << NT_MINOR
-                      << NT_BUILD << std::endl;
-          OsVer = debugStream.str();
-          break;
+        debugStream.str("");
+        debugStream.clear();
+        debugStream << " Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        OsVer = debugStream.str();
+        break;
     }
   } else if (NT_MAJOR == 5) {
     switch (NT_MINOR) {
       case 0:
-          if (NT_TYPE == VER_NT_WORKSTATION) {
-            OsVer = "Windows 2000 Professional " + NT_POST_STRING;
+        if (NT_TYPE == VER_NT_WORKSTATION) {
+          OsVer = "Windows 2000 Professional " + NT_POST_STRING;
+        } else {
+          if (NT_SUITE == VER_SUITE_ENTERPRISE) {
+            OsVer = "Windows 2000 Advanced Server " + NT_POST_STRING;
+          } else if (NT_SUITE == VER_SUITE_DATACENTER) {
+            OsVer = "Windows 2000 Datacenter " + NT_POST_STRING;
           } else {
-            if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-              OsVer = "Windows 2000 Advanced Server " + NT_POST_STRING;
-            } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-              OsVer = "Windows 2000 Datacenter " + NT_POST_STRING;
-            } else {
-              OsVer = "Windows 2000 Server " + NT_POST_STRING;
-            }
+            OsVer = "Windows 2000 Server " + NT_POST_STRING;
           }
-          break;
+        }
+        break;
       case 1:
-          if (GetSystemMetrics(SM_STARTER) != 0) {
-            OsVer = "Windows XP Starter Edition " + NT_POST_STRING;
-          } else if (GetSystemMetrics(SM_TABLETPC) != 0) {
-            OsVer = "Windows XP Tablet PC Edition " + NT_POST_STRING;
+        if (GetSystemMetrics(SM_STARTER) != 0) {
+          OsVer = "Windows XP Starter Edition " + NT_POST_STRING;
+        } else if (GetSystemMetrics(SM_TABLETPC) != 0) {
+          OsVer = "Windows XP Tablet PC Edition " + NT_POST_STRING;
+        } else {
+          if (NT_SUITE == VER_SUITE_PERSONAL) {
+            OsVer = "Windows XP Home Edition " + NT_POST_STRING;
+          } else if (NT_SUITE == VER_SUITE_EMBEDDEDNT) {
+            OsVer = "Windows XP Embedded " + NT_POST_STRING;
           } else {
-            if (NT_SUITE == VER_SUITE_PERSONAL) {
-              OsVer = "Windows XP Home Edition " + NT_POST_STRING;
-            } else if (NT_SUITE == VER_SUITE_EMBEDDEDNT) {
-              OsVer = "Windows XP Embedded " + NT_POST_STRING;
-            } else {
-              OsVer = "Windows XP Professional " + NT_POST_STRING;
-            }
+            OsVer = "Windows XP Professional " + NT_POST_STRING;
           }
-          break;
+        }
+        break;
       case 2:
-          if (NT_SUITE == VER_SUITE_WH_SERVER) {
-            OsVer = "Windows Home Server " + NT_POST_STRING;
+        if (NT_SUITE == VER_SUITE_WH_SERVER) {
+          OsVer = "Windows Home Server " + NT_POST_STRING;
+        } else {
+          if (NT_TYPE == VER_NT_WORKSTATION) {
+            OsVer = "XP x64 " + NT_POST_STRING;
           } else {
-            if (NT_TYPE == VER_NT_WORKSTATION) {
-              OsVer = "XP x64 " + NT_POST_STRING;
-            } else {
-              if (GetSystemMetrics(SM_SERVERR2) == 0) {
-                if (NT_SUITE == VER_SUITE_BLADE) {
-                  OsVer = "Windows Server 2003 Web Edition " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_COMPUTE_SERVER) {
-                  OsVer = "Windows Server 2003 Compute Cluster Edition " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_STORAGE_SERVER) {
-                  OsVer = "Windows Server 2003 Enterprise " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-                  OsVer = "Windows Server 2003 Enterprise " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-                  OsVer = "Windows Server 2003 Datacenter " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_SMALLBUSINESS) {
-                  OsVer = "Windows Server 2003 Small Business Server " + NT_POST_STRING;
-                } else {
-                  OsVer = "Windows Server 2003 Standard " + NT_POST_STRING;
-                }
+            if (GetSystemMetrics(SM_SERVERR2) == 0) {
+              if (NT_SUITE == VER_SUITE_BLADE) {
+                OsVer = "Windows Server 2003 Web Edition " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_COMPUTE_SERVER) {
+                OsVer = "Windows Server 2003 Compute Cluster Edition " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_STORAGE_SERVER) {
+                OsVer = "Windows Server 2003 Enterprise " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
+                OsVer = "Windows Server 2003 Enterprise " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_DATACENTER) {
+                OsVer = "Windows Server 2003 Datacenter " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_SMALLBUSINESS) {
+                OsVer = "Windows Server 2003 Small Business Server " + NT_POST_STRING;
               } else {
-                if (NT_SUITE == VER_SUITE_BLADE) {
-                  OsVer = "Windows Server 2003 R2 Web Edition " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_COMPUTE_SERVER) {
-                  OsVer = "Windows Server 2003 R2 Compute Cluster Edition " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_STORAGE_SERVER) {
-                  OsVer = "Windows Server 2003 R2 Enterprise " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-                  OsVer = "Windows Server 2003 R2 Enterprise " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-                  OsVer = "Windows Server 2003 R2 Datacenter " + NT_POST_STRING;
-                } else if (NT_SUITE == VER_SUITE_SMALLBUSINESS) {
-                  OsVer = "Windows Server 2003 R2 Small Business Server " + NT_POST_STRING;
-                } else {
-                  OsVer = "Windows Server 2003 R2 Standard " + NT_POST_STRING;
-                }
+                OsVer = "Windows Server 2003 Standard " + NT_POST_STRING;
+              }
+            } else {
+              if (NT_SUITE == VER_SUITE_BLADE) {
+                OsVer = "Windows Server 2003 R2 Web Edition " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_COMPUTE_SERVER) {
+                OsVer = "Windows Server 2003 R2 Compute Cluster Edition " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_STORAGE_SERVER) {
+                OsVer = "Windows Server 2003 R2 Enterprise " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
+                OsVer = "Windows Server 2003 R2 Enterprise " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_DATACENTER) {
+                OsVer = "Windows Server 2003 R2 Datacenter " + NT_POST_STRING;
+              } else if (NT_SUITE == VER_SUITE_SMALLBUSINESS) {
+                OsVer = "Windows Server 2003 R2 Small Business Server " + NT_POST_STRING;
+              } else {
+                OsVer = "Windows Server 2003 R2 Standard " + NT_POST_STRING;
               }
             }
           }
-          break;
+        }
+        break;
       case 5:
-          OsVer = "Windows Neptune " + NT_POST_STRING;
-          break;
+        OsVer = "Windows Neptune " + NT_POST_STRING;
+        break;
       default:
-          debugStream.str("");
-          debugStream.clear();
-          debugStream << " Unknown Windows "
-                      << NT_MAJOR << NT_MINOR
-                      << NT_BUILD << std::endl;
-          OsVer = debugStream.str();
-          break;
+        debugStream.str("");
+        debugStream.clear();
+        debugStream << " Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        OsVer = debugStream.str();
+        break;
     }
   } else if (NT_MAJOR == 6) {
     switch (NT_MINOR) {
       case 0:
+        if (NT_TYPE == VER_NT_WORKSTATION) {
+          if (GetSystemMetrics(SM_STARTER) != 0) {
+            OsVer = "Windows Vista Starter " + NT_POST_STRING;
+          } else {
+            if (NT_SUITE == VER_SUITE_PERSONAL) {
+              OsVer = "Windows Vista Home " + NT_POST_STRING;
+            } else {
+              OsVer = "Windows Vista " + NT_POST_STRING;
+            }
+          }
+        } else {
+          if (NT_SUITE == VER_SUITE_ENTERPRISE) {
+            OsVer = "Windows Server 2008 Enterprise " + NT_POST_STRING;
+          } else if (NT_SUITE == VER_SUITE_DATACENTER) {
+            OsVer = "Windows Server 2008 Datacenter " + NT_POST_STRING;
+          } else {
+            OsVer = "Windows Server 2008 " + NT_POST_STRING;
+          }
+        }
+        break;
+      case 1:
+        if (NT_BUILD == 8400 || NT_SUITE == VER_SUITE_WH_SERVER) {
+          OsVer = "Windows Home Server 2011 " + NT_POST_STRING;
+        } else {
           if (NT_TYPE == VER_NT_WORKSTATION) {
             if (GetSystemMetrics(SM_STARTER) != 0) {
-              OsVer = "Windows Vista Starter " + NT_POST_STRING;
+              OsVer = "Windows 7 Starter " + NT_POST_STRING;
             } else {
               if (NT_SUITE == VER_SUITE_PERSONAL) {
-                OsVer = "Windows Vista Home " + NT_POST_STRING;
+                OsVer = "Windows 7 Home " + NT_POST_STRING;
               } else {
-                OsVer = "Windows Vista " + NT_POST_STRING;
+                OsVer = "Windows 7 " + NT_POST_STRING;
               }
             }
           } else {
             if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-              OsVer = "Windows Server 2008 Enterprise " + NT_POST_STRING;
+              OsVer = "Windows Server 2008 R2 Enterprise " + NT_POST_STRING;
             } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-              OsVer = "Windows Server 2008 Datacenter " + NT_POST_STRING;
+              OsVer = "Windows Server 2008 R2 Datacenter " + NT_POST_STRING;
             } else {
-              OsVer = "Windows Server 2008 " + NT_POST_STRING;
+              OsVer = "Windows Server 2008 R2 " + NT_POST_STRING;
             }
           }
-          break;
-      case 1:
-          if (NT_BUILD == 8400 || NT_SUITE == VER_SUITE_WH_SERVER) {
-            OsVer = "Windows Home Server 2011 " + NT_POST_STRING;
-          } else {
-            if (NT_TYPE == VER_NT_WORKSTATION) {
-              if (GetSystemMetrics(SM_STARTER) != 0) {
-                OsVer = "Windows 7 Starter " + NT_POST_STRING;
-              } else {
-                if (NT_SUITE == VER_SUITE_PERSONAL) {
-                  OsVer = "Windows 7 Home " + NT_POST_STRING;
-                } else {
-                  OsVer = "Windows 7 " + NT_POST_STRING;
-                }
-              }
-            } else {
-              if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-                OsVer = "Windows Server 2008 R2 Enterprise " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-                OsVer = "Windows Server 2008 R2 Datacenter " + NT_POST_STRING;
-              } else {
-                OsVer = "Windows Server 2008 R2 " + NT_POST_STRING;
-              }
-            }
-          }
-          break;
+        }
+        break;
       case 2:
-          if (NT_TYPE == VER_NT_WORKSTATION) {
-            OsVer = "Windows 8 " + NT_POST_STRING;
-          } else {
-            OsVer = "Windows Server 2012 " + NT_POST_STRING;
-          }
-          break;
+        if (NT_TYPE == VER_NT_WORKSTATION) {
+          OsVer = "Windows 8 " + NT_POST_STRING;
+        } else {
+          OsVer = "Windows Server 2012 " + NT_POST_STRING;
+        }
+        break;
       case 3:
-          if (NT_TYPE == VER_NT_WORKSTATION) {
-            OsVer = "Windows 8.1 " + NT_POST_STRING;
-          } else {
-            OsVer = "Windows Server 2012 R2 " + NT_POST_STRING;
-          }
-          break;
+        if (NT_TYPE == VER_NT_WORKSTATION) {
+          OsVer = "Windows 8.1 " + NT_POST_STRING;
+        } else {
+          OsVer = "Windows Server 2012 R2 " + NT_POST_STRING;
+        }
+        break;
       default:
-          debugStream.str("");
-          debugStream.clear();
-          debugStream << " Unknown Windows "
-                      << NT_MAJOR << NT_MINOR
-                      << NT_BUILD << std::endl;
-          OsVer = debugStream.str();
-          break;
+        debugStream.str("");
+        debugStream.clear();
+        debugStream << " Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        OsVer = debugStream.str();
+        break;
     }
   } else if (NT_MAJOR == 10) {
     switch (NT_MINOR) {
       case 0: {
-          if (!is_win11) {
-            if (NT_TYPE == VER_NT_WORKSTATION) {
-              OsVer = "Windows 10 " + NT_POST_STRING;
-            } else {
-              if (NT_BUILD >= 14393 && NT_BUILD < 17763) {
-                OsVer = "Windows Server 2016 " + NT_POST_STRING;
-              } else if (NT_BUILD >= 17763 && NT_BUILD < 20348) {
-                OsVer = "Windows Server 2019 " + NT_POST_STRING;
-              } else if (NT_BUILD >= 20348 && NT_BUILD < 25398) {
-                OsVer = "Windows Server 2022 " + NT_POST_STRING;
-              } else {
-                OsVer = "Windows Server " + NT_POST_STRING;
-              }
-            }
+        if (!is_win11) {
+          if (NT_TYPE == VER_NT_WORKSTATION) {
+            OsVer = "Windows 10 " + NT_POST_STRING;
           } else {
-            if (NT_TYPE == VER_NT_WORKSTATION) {
-              OsVer = "Windows 11 " + NT_POST_STRING;
+            if (NT_BUILD >= 14393 && NT_BUILD < 17763) {
+              OsVer = "Windows Server 2016 " + NT_POST_STRING;
+            } else if (NT_BUILD >= 17763 && NT_BUILD < 20348) {
+              OsVer = "Windows Server 2019 " + NT_POST_STRING;
+            } else if (NT_BUILD >= 20348 && NT_BUILD < 25398) {
+              OsVer = "Windows Server 2022 " + NT_POST_STRING;
             } else {
-              if (NT_BUILD == 26100) {
-                OsVer = "Windows Server 2025 " + NT_POST_STRING;
-              } else {
-                OsVer = "Windows Server " + NT_POST_STRING;
-              }
+              OsVer = "Windows Server " + NT_POST_STRING;
             }
           }
-          break;
+        } else {
+          if (NT_TYPE == VER_NT_WORKSTATION) {
+            OsVer = "Windows 11 " + NT_POST_STRING;
+          } else {
+            if (NT_BUILD == 26100) {
+              OsVer = "Windows Server 2025 " + NT_POST_STRING;
+            } else {
+              OsVer = "Windows Server " + NT_POST_STRING;
+            }
+          }
         }
+        break;
+      }
       case 1:
-          OsVer = "Windows 12 " + NT_POST_STRING;
-          break;
+        OsVer = "Windows 12 " + NT_POST_STRING;
+        break;
       default:
-          debugStream.str("");
-          debugStream.clear();
-          debugStream << " - Unknown Windows "
-                      << NT_MAJOR << NT_MINOR
-                      << NT_BUILD << std::endl;
-          OsVer = debugStream.str();
-          break;
+        debugStream.str("");
+        debugStream.clear();
+        debugStream << " - Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        OsVer = debugStream.str();
+        break;
     }
   } else {
     debugStream.str("");
@@ -598,9 +587,8 @@ static std::string const GetNTString() {
   // NT Kernels with numbers outside this range don't exist
   if (NT_MAJOR >= 3 && NT_MAJOR <= 11) {
     // Define NtVer as human readable string literal separated by decimals
-    NtVer = std::to_string(NT_MAJOR)
-        + "." + std::to_string(NT_MINOR)
-        + "." + std::to_string(NT_BUILD);
+    NtVer =
+        std::to_string(NT_MAJOR) + "." + std::to_string(NT_MINOR) + "." + std::to_string(NT_BUILD);
   }
 
   return NtVer;
@@ -617,17 +605,15 @@ OSINFO_API std::wstring const GetWinVersionW() {
 }
 
 OSINFO_API unsigned long long const GetRawNTVer() {
-  const unsigned long long retval =
-      (static_cast<unsigned long long>(NT_MAJOR) << 24) |
-      (static_cast<unsigned long long>(NT_MINOR) << 16) |
-      (static_cast<unsigned long long>(NT_BUILD) & 0xFFFFULL);
+  const unsigned long long retval = (static_cast<unsigned long long>(NT_MAJOR) << 24) |
+                                    (static_cast<unsigned long long>(NT_MINOR) << 16) |
+                                    (static_cast<unsigned long long>(NT_BUILD) & 0xFFFFULL);
   return retval;
 }
 
 OSINFO_API unsigned long const GetShortNTVer() {
-  const unsigned long long retval =
-      (static_cast<unsigned long long>(NT_MAJOR) << 8) |
-      (static_cast<unsigned long long>(NT_MINOR));
+  const unsigned long long retval = (static_cast<unsigned long long>(NT_MAJOR) << 8) |
+                                    (static_cast<unsigned long long>(NT_MINOR));
   return retval;
 }
 
@@ -656,12 +642,7 @@ static std::string WstringToString(const std::wstring& wstr) {
   if (wstr.empty()) {
     return std::string();
   }
-  int utf8_len = WideCharToMultiByte(
-      CP_UTF8, 0,
-      wstr.c_str(), -1,
-      nullptr, 0,
-      nullptr, nullptr
-  );
+  int utf8_len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
 
   if (utf8_len == 0) {
     throw std::runtime_error("WideCharToMultiByte failed!");
@@ -669,12 +650,7 @@ static std::string WstringToString(const std::wstring& wstr) {
 
   // Convert
   std::string result(utf8_len, '\0');
-  WideCharToMultiByte(
-      CP_UTF8, 0,
-      wstr.c_str(), -1,
-      &result[0], utf8_len,
-      nullptr, nullptr
-  );
+  WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], utf8_len, nullptr, nullptr);
 
   // Remove trailing null terminator
   if (!result.empty() && result.back() == '\0') {
@@ -692,7 +668,9 @@ inline static void ImmediateDebugCrash() {
       "ud2");
 #else
   __asm int 3 // Execute int3 interrupt
-  __asm { UD2 } // Execute 0x0F, 0x0B
+      __asm {
+    UD2
+  } // Execute 0x0F, 0x0B
 #endif // __MINGW32__
 }
 
