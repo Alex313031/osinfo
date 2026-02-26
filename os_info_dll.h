@@ -120,7 +120,7 @@ typedef BOOL (*pIsWin10)();
 typedef BOOL (*pIsWin11)();
 
 #ifdef __cplusplus
-}
+} // extern "C"
 #endif
 
 #endif // OSINFO_DLL_OS_INFO_DLL_H_

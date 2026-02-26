@@ -1,8 +1,6 @@
 #ifndef OSINFO_DLL_OS_INFO_H_
 #define OSINFO_DLL_OS_INFO_H_
 
-#include <winver.h>
-
 #include "os_info_dll.h"
 #include "stdafx.h"
 
@@ -82,6 +80,7 @@ static const bool __cdecl DeInitOsInfoDLL();
    std::string func_name(__FUNC__); \
    NotReachedImpl(func_name);
 #endif // NOTREACHED
-}
+
+} // extern "C"
 
 #endif // OSINFO_DLL_OS_INFO_H_
