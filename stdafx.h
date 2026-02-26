@@ -21,7 +21,7 @@
 // Windows Header Files
 #include <windows.h>  // Main Windows header
 #include <winternl.h> // Main Windows header
-
+#include <winver.h>   // Windows version functions
 #include <commctrl.h> // Common controls header
 #include <mmsystem.h> // For playing sounds
 #include <ntstatus.h> // For NTSTATUS
@@ -35,4 +35,3 @@
 #include <sstream>   // std::ostringstream std::wostringstream
 #include <stdexcept> // exception handline
 #include <string>    // std::string std::wstring
-#include <vector>    // std::vector
