@@ -1,8 +1,11 @@
 #ifndef OSINFO_DLL_OS_INFO_H_
 #define OSINFO_DLL_OS_INFO_H_
 
-#include "os_info_dll.h"
+// clang-format off
 #include "stdafx.h"
+
+#include "os_info_dll.h"
+// clang-format on
 
 extern "C" {
 
