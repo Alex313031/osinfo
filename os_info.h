@@ -9,6 +9,8 @@
 
 extern "C" {
 
+typedef BOOL(WINAPI* IS_WOW64_PROCESS_)(HANDLE hProcess, PBOOL Wow64Process);
+
 extern unsigned long WinVer;
 
 extern unsigned long long WinVerFull;

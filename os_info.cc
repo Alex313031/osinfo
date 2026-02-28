@@ -16,6 +16,8 @@ bool is_win81 = false;
 bool is_win10 = false;
 bool is_win11 = false;
 
+static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
+
 OSINFO_API BOOL __cdecl DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
   gHinstDLL = hInstDLL;
 
@@ -721,8 +723,8 @@ OSINFO_API const bool IsWin11() {
 }
 
 OSINFO_API const bool IsAtLeast(const unsigned long check_ver) {
-  const bool is_ver = WinVer >= check_ver;
-  return is_ver;
+  const bool is_at_least = WinVer >= check_ver;
+  return is_at_least;
 }
 
 OSINFO_API const bool IsWin(const unsigned long check_ver) {
@@ -731,11 +733,32 @@ OSINFO_API const bool IsWin(const unsigned long check_ver) {
 }
 
 OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver) {
-  const bool is_ver = WinVer > check_ver;
-  return is_ver;
+  const bool is_newer = WinVer > check_ver;
+  return is_newer;
 }
 
 OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver) {
-  const bool is_ver = WinVer < check_ver;
-  return is_ver;
+  const bool is_older = WinVer < check_ver;
+  return is_older;
+}
+
+OSINFO_API const bool IsWoW64() {
+  BOOL isWoW64 = false;
+
+  HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+  if (IsWinOlderThan(NTVER_XP) || !hKernel32) {
+    pIsWow64Process = nullptr;
+    isWoW64 = false;
+  } else {
+    pIsWow64Process =
+        reinterpret_cast<IS_WOW64_PROCESS_>(GetProcAddress(hKernel32, "IsWow64Process"));
+    if(!pIsWow64Process || pIsWow64Process == nullptr) {
+      return false;
+    } else {
+      if (!pIsWow64Process(GetCurrentProcess(), &isWoW64)) {
+        return false;
+      }
+    }
+  }
+  return static_cast<bool>(isWoW64);
 }

@@ -79,6 +79,9 @@ OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver);
 // Checks if Windows version is older than the one passed in check_ver
 OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver);
 
+// Returns if we are running under WoW64, i.e. 32 bit app on 64 bit Windows.
+OSINFO_API const bool IsWoW64();
+
 /* Simple bool functions for getting if is a specific version */
 OSINFO_API const bool IsWinNT4();
 OSINFO_API const bool IsWin2K();

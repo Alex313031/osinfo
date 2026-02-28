@@ -30,3 +30,4 @@ IsWinNewerThan
 IsWinOlderThan
 IsWinVista
 IsWinXP
+IsWoW64
