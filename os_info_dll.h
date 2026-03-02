@@ -95,7 +95,7 @@ OSINFO_API const bool IsWin10();
 OSINFO_API const bool IsWin11();
 
 // Pre-defined Typedefs for dynamically accessing
-// osinfo.dll functions using GetProcAddress
+// osinfo.dll functions using GetProcAddress (you could make up your own)
 typedef std::string (*pGetOSNameA)();
 
 typedef std::wstring (*pGetOSNameW)();
@@ -110,7 +110,10 @@ typedef unsigned long long (*pGetRawNTVer)();
 
 typedef unsigned long (*pGetShortNTVer)();
 
-typedef BOOL (*pIsAtLeast)();
+typedef BOOL (*pIsWin)(const ULONG);
+typedef BOOL (*pIsAtLeast)(const ULONG);
+typedef BOOL (*pIsWinNewerThan)(const ULONG);
+typedef BOOL (*pIsWinOlderThan)(const ULONG);
 typedef BOOL (*pIsWinNT4)();
 typedef BOOL (*pIsWin2K)();
 typedef BOOL (*pIsWinXP)();
@@ -121,6 +124,7 @@ typedef BOOL (*pIsWin8)();
 typedef BOOL (*pIsWin8_1)();
 typedef BOOL (*pIsWin10)();
 typedef BOOL (*pIsWin11)();
+typedef BOOL (*pIsWoW64)();
 
 #ifdef __cplusplus
 } // extern "C"
