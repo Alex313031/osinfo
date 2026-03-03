@@ -748,11 +748,11 @@ OSINFO_API const bool IsWoW64() {
   HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
   if (IsWinOlderThan(NTVER_XP) || !hKernel32) {
     pIsWow64Process = nullptr;
-    isWoW64 = false;
+    isWoW64         = false;
   } else {
     pIsWow64Process =
         reinterpret_cast<IS_WOW64_PROCESS_>(GetProcAddress(hKernel32, "IsWow64Process"));
-    if(!pIsWow64Process || pIsWow64Process == nullptr) {
+    if (!pIsWow64Process || pIsWow64Process == nullptr) {
       return false;
     } else {
       if (!pIsWow64Process(GetCurrentProcess(), &isWoW64)) {
