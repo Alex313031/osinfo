@@ -54,7 +54,13 @@ NamespaceIndentation: All
  # No spaces between C casts
 SpaceAfterCStyleCast: false
  # Whether to align after open function brackets for long params
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: true
+#AlignAfterOpenBracket: Align
+AllowAllParametersOfDeclarationOnNextLine: false
+BreakAfterOpenBracketFunction: false
+BreakBeforeCloseBracketFunction: false
+BinPackParameters: OnePerLine
+#BinPackParameters: false
  # Align consecutive macros, sometimes annoying
 AlignConsecutiveMacros: true
  # Align consecutive variable assignments
