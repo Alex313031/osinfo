@@ -18,26 +18,52 @@ bool is_win11 = false;
 
 static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
 
-OSINFO_API BOOL __cdecl DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
+static bool is_initialized  = false;
+static bool was_static_load = false;
+
+// Main entry point when loading/unloading .DLL from address space of another process/thread.
+// MUST have exact function signature BOOL WINAPI.
+// See https://www.transmissionzero.co.uk/computing/advanced-mingw-dll-topics/
+OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
   gHinstDLL = hInstDLL;
 
-  if (dwReason == DLL_PROCESS_ATTACH || dwReason == DLL_THREAD_ATTACH) {
-    return InitOsInfoDll();
-  } else if (dwReason == DLL_PROCESS_DETACH) {
-    if (lpvReserved != nullptr) {
-      return TRUE;
-    } else {
-      return DeInitOsInfoDLL();
+  switch (dwReason) {
+    // Called on LoadLibrary or static import
+    case DLL_PROCESS_ATTACH: {
+      // Non-NULL means dll was statically loaded.
+      if (lpvReserved != nullptr) {
+        was_static_load = true;
+      }
+      return InitOsInfoDll();
     }
-  } else if (dwReason == DLL_THREAD_ATTACH) {
-    return TRUE;
-  } else {
-    return FALSE;
+    // Called when threads are run by parent process after DLL_PROCESS_ATTACH
+    case DLL_THREAD_ATTACH: {
+      if (is_initialized) {
+        return TRUE; // Skip unnecessary call to InitOsInfoDll
+      } else {
+        return InitOsInfoDll();
+      }
+    }
+    // Called when FreeLibrary is called or program shutting down
+    case DLL_PROCESS_DETACH: {
+      // If lpvReserved is NULL, DLL load failed or FreeLibrary was called.
+      if (lpvReserved == nullptr) {
+        return DeInitOsInfoDLL();
+      } else {
+        // Process is terminating
+        return TRUE;
+      }
+    }
+    case DLL_THREAD_DETACH: {
+      return TRUE; // Unused in osinfo.dll
+    }
+    default:
+      return FALSE;
   }
 }
 
 OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi) {
-  if (pdvi == nullptr) {
+  if (pdvi == nullptr || !is_initialized) {
     return E_POINTER;
   }
 
@@ -82,11 +108,15 @@ const bool DeInitOsInfoDLL() {
   // Todo add memory cleanup here.
   WinVer     = 0u;
   WinVerFull = 0u;
+  is_initialized = false;
   return (WinVer == 0u && WinVerFull == 0u);
 }
 
 OSINFO_API const bool InitOsInfoDll() {
   const bool ret = GetWinNTVersion();
+  if (ret) {
+    is_initialized = true;
+  }
   return ret;
 }
 
@@ -186,9 +216,8 @@ OSINFO_API std::string const GetOSNameA() {
   // For obscure versions or pre NT4 SP6
   std::ostringstream debugStream;
 
-  const bool gotNTVersion = GetWinNTVersion();
-  if (!gotNTVersion) {
-    return std::string();
+  if (!is_initialized) {
+      return std::string();
   }
 
   // Get the service pack
@@ -580,8 +609,7 @@ static std::string const GetNTString() {
   std::string NtVer;
   std::ostringstream debugStream;
 
-  bool gotNTVersion = GetWinNTVersion();
-  if (!gotNTVersion) {
+  if (!is_initialized) {
     return std::string();
   }
 
@@ -607,6 +635,9 @@ OSINFO_API std::wstring const GetWinVersionW() {
 }
 
 OSINFO_API unsigned long long const GetRawNTVer() {
+  if (!is_initialized) {
+    return 0;
+  }
   const unsigned long long retval = (static_cast<unsigned long long>(NT_MAJOR) << 24) |
                                     (static_cast<unsigned long long>(NT_MINOR) << 16) |
                                     (static_cast<unsigned long long>(NT_BUILD) & 0xFFFFULL);
@@ -614,6 +645,9 @@ OSINFO_API unsigned long long const GetRawNTVer() {
 }
 
 OSINFO_API unsigned long const GetShortNTVer() {
+  if (!is_initialized) {
+    return 0;
+  }
   const unsigned long long retval = (static_cast<unsigned long long>(NT_MAJOR) << 8) |
                                     (static_cast<unsigned long long>(NT_MINOR));
   return retval;
@@ -685,6 +719,9 @@ inline void NotReachedImpl(std::string func_name) {
 }
 
 OSINFO_API const std::wstring GetOsInfoDllVersionW() {
+  if (!is_initialized) {
+    return std::wstring();
+  }
   std::wostringstream wostr;
   wostr << OSINFO_VERSION_STRING;
   const std::wstring retval = wostr.str();

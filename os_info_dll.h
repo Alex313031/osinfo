@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 // DLL equivalent of WinMain
-OSINFO_API BOOL __cdecl DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
+OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
 
 /* DllGetVersion accepts pointer to DLLVERSIONINFO or DLLVERSIONINFO2.
  * The structure type is determined at runtime by the cbSize field. */
