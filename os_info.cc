@@ -62,7 +62,7 @@ OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvRes
   }
 }
 
-OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi) {
+OSINFO_API HRESULT DllGetVersion(DLLVERSIONINFO* pdvi) {
   if (pdvi == nullptr || !is_initialized) {
     return E_POINTER;
   }
@@ -223,7 +223,6 @@ OSINFO_API std::string const GetOSNameA() {
   // Get the service pack
   const bool fallback = NT_MAJOR < 6;
   std::wstring NT_SP;
-  std::wstring SP(NT_CSD_VERSION);
   if (fallback) {
     if (NT_SP_MINOR == 0) {
       NT_SP = L"Service Pack " + std::to_wstring(NT_SP_MAJOR);
@@ -231,6 +230,7 @@ OSINFO_API std::string const GetOSNameA() {
       NT_SP = L"Service Pack " + std::to_wstring(NT_SP_MAJOR) + L"." + std::to_wstring(NT_SP_MINOR);
     }
   } else {
+    std::wstring SP(NT_CSD_VERSION);
     NT_SP = SP;
   }
   NT_SERVICE_PACK = WstringToString(NT_SP);
@@ -600,8 +600,7 @@ OSINFO_API std::string const GetOSNameA() {
 }
 
 OSINFO_API std::wstring const GetOSNameW() {
-  const std::wstring retval = StringToWstring(GetOSNameA());
-  return retval;
+  return StringToWstring(GetOSNameA());
 }
 
 static std::string const GetNTString() {
@@ -630,8 +629,7 @@ OSINFO_API std::string const GetWinVersionA() {
 }
 
 OSINFO_API std::wstring const GetWinVersionW() {
-  const std::wstring wver = StringToWstring(GetWinVersionA());
-  return wver;
+  return StringToWstring(GetWinVersionA());
 }
 
 OSINFO_API unsigned long long const GetRawNTVer() {
@@ -653,7 +651,36 @@ OSINFO_API unsigned long const GetShortNTVer() {
   return retval;
 }
 
-static std::wstring StringToWstring(const std::string& str) {
+OSINFO_API int const GetServicePackNumber() {
+  if (!is_initialized) {
+    return -1;
+  }
+  const int kSPMajor = static_cast<int>(NT_SP_MAJOR);
+  return kSPMajor;
+}
+
+OSINFO_API std::string const GetServicePackA() {
+  return WstringToString(GetServicePackW());
+}
+
+OSINFO_API std::wstring const GetServicePackW() {
+  // Get the service pack
+  const bool fallback = NT_MAJOR < 6;
+  std::wstring service_pack;
+  if (fallback) {
+    if (NT_SP_MINOR == 0) {
+      service_pack = L"Service Pack " + std::to_wstring(NT_SP_MAJOR);
+    } else {
+      service_pack = L"Service Pack " + std::to_wstring(NT_SP_MAJOR) + L"." + std::to_wstring(NT_SP_MINOR);
+    }
+  } else {
+    std::wstring SP(NT_CSD_VERSION);
+    service_pack = SP;
+  }
+  return service_pack;
+}
+
+static std::wstring const StringToWstring(const std::string& str) {
   if (str.empty()) {
     return std::wstring();
   }
@@ -674,7 +701,7 @@ static std::wstring StringToWstring(const std::string& str) {
   return result;
 }
 
-static std::string WstringToString(const std::wstring& wstr) {
+static std::string const WstringToString(const std::wstring& wstr) {
   if (wstr.empty()) {
     return std::string();
   }

@@ -69,9 +69,9 @@ unsigned long __cdecl combineToHex(unsigned long high, unsigned long low);
 
 static std::string const __cdecl GetNTString();
 
-static std::wstring __cdecl StringToWstring(const std::string& str);
+static std::wstring const __cdecl StringToWstring(const std::string& str);
 
-static std::string __cdecl WstringToString(const std::wstring& wstr);
+static std::string const __cdecl WstringToString(const std::wstring& wstr);
 
 inline void __cdecl NotReachedImpl(std::string func_name);
 

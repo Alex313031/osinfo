@@ -48,6 +48,16 @@ OSINFO_API unsigned long long const __cdecl GetRawNTVer();
 // the NT build number. For example, for Windows 7 SP1, it would return 0x601.
 OSINFO_API unsigned long const __cdecl GetShortNTVer();
 
+// Gets the service pack number as an int, returns 0 for RTM with no service pack
+// and returns -1 if not initialized.
+OSINFO_API int const __cdecl GetServicePackNumber();
+
+// Gets the service pack as a human readable string.
+OSINFO_API std::string const __cdecl GetServicePackA();
+
+// Wide version of the above
+OSINFO_API std::wstring const __cdecl GetServicePackW();
+
 // USE THESE for the below IsAtLeast() function;
 inline constexpr unsigned long kWinNT4       = 0x0400L;
 inline constexpr unsigned long kWin2000      = 0x0500L;
@@ -68,31 +78,31 @@ inline constexpr unsigned long kWin10        = 0x0A00L;
 inline constexpr unsigned long kWin11        = kWin10;
 
 // Bool to check if Windows version is exactly the one passed in check_ver
-OSINFO_API const bool IsWin(const unsigned long check_ver);
+OSINFO_API const bool __cdecl IsWin(const unsigned long check_ver);
 
 // Checks if Windows version is at least the one passed (or higher) in check_ver
-OSINFO_API const bool IsAtLeast(const unsigned long check_ver);
+OSINFO_API const bool __cdecl IsAtLeast(const unsigned long check_ver);
 
 // Checks if Windows version is newer than the one passed in check_ver
-OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver);
+OSINFO_API const bool __cdecl IsWinNewerThan(const unsigned long check_ver);
 
 // Checks if Windows version is older than the one passed in check_ver
-OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver);
+OSINFO_API const bool __cdecl IsWinOlderThan(const unsigned long check_ver);
 
 // Returns if we are running under WoW64, i.e. 32 bit app on 64 bit Windows.
-OSINFO_API const bool IsWoW64();
+OSINFO_API const bool __cdecl IsWoW64();
 
 /* Simple bool functions for getting if is a specific version */
-OSINFO_API const bool IsWinNT4();
-OSINFO_API const bool IsWin2K();
-OSINFO_API const bool IsWinXP();
-OSINFO_API const bool IsWin2003();
-OSINFO_API const bool IsWinVista();
-OSINFO_API const bool IsWin7();
-OSINFO_API const bool IsWin8();
-OSINFO_API const bool IsWin8_1();
-OSINFO_API const bool IsWin10();
-OSINFO_API const bool IsWin11();
+OSINFO_API const bool __cdecl IsWinNT4();
+OSINFO_API const bool __cdecl IsWin2K();
+OSINFO_API const bool __cdecl IsWinXP();
+OSINFO_API const bool __cdecl IsWin2003();
+OSINFO_API const bool __cdecl IsWinVista();
+OSINFO_API const bool __cdecl IsWin7();
+OSINFO_API const bool __cdecl IsWin8();
+OSINFO_API const bool __cdecl IsWin8_1();
+OSINFO_API const bool __cdecl IsWin10();
+OSINFO_API const bool __cdecl IsWin11();
 
 // Pre-defined Typedefs for dynamically accessing
 // osinfo.dll functions using GetProcAddress (you could make up your own)

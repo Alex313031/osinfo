@@ -6,11 +6,14 @@
 LIBRARY "osinfo.dll"
 EXPORTS
 DllGetVersion
-DllMain
+DllMain@12@12
 GetOSNameA
 GetOSNameW
 GetOsInfoDllVersionW
 GetRawNTVer
+GetServicePackA
+GetServicePackNumber
+GetServicePackW
 GetShortNTVer
 GetWinNTVersion
 GetWinVersionA
