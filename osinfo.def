@@ -15,6 +15,7 @@ GetWinVersionA
 GetWinVersionW
 InitOsInfoDll
 IsAtLeast
+IsAtMost
 IsWin
 IsWin10
 IsWin11

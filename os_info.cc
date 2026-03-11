@@ -786,14 +786,19 @@ OSINFO_API const bool IsWin11() {
   return is_win11;
 }
 
+OSINFO_API const bool IsWin(const unsigned long check_ver) {
+  const bool is_ver = WinVer == check_ver;
+  return is_ver;
+}
+
 OSINFO_API const bool IsAtLeast(const unsigned long check_ver) {
   const bool is_at_least = WinVer >= check_ver;
   return is_at_least;
 }
 
-OSINFO_API const bool IsWin(const unsigned long check_ver) {
-  const bool is_ver = WinVer == check_ver;
-  return is_ver;
+OSINFO_API const bool IsAtMost(const unsigned long check_ver) {
+  const bool is_at_least = WinVer <= check_ver;
+  return is_at_least;
 }
 
 OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver) {

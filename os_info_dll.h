@@ -83,6 +83,9 @@ OSINFO_API const bool __cdecl IsWin(const unsigned long check_ver);
 // Checks if Windows version is at least the one passed (or higher) in check_ver
 OSINFO_API const bool __cdecl IsAtLeast(const unsigned long check_ver);
 
+// Checks if Windows version is at most the one passed (or less) in check_ver
+OSINFO_API const bool __cdecl IsAtMost(const unsigned long check_ver);
+
 // Checks if Windows version is newer than the one passed in check_ver
 OSINFO_API const bool __cdecl IsWinNewerThan(const unsigned long check_ver);
 
