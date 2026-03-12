@@ -388,6 +388,7 @@ OSINFO_API std::string const GetOSNameA() {
             OsVer = "Windows NT 4.0 Server ";
           }
         }
+        OsVer += NT_POST_STRING;
         break;
       default:
         debugStream.str("");
