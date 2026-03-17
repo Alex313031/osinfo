@@ -249,7 +249,7 @@ OSINFO_API std::string const GetOSNameA() {
       if (NT_SUITE == VER_SUITE_TERMINAL) {
         NT_FEATURE_VERSION = " (Cairo)";
       } else {
-        NT_FEATURE_VERSION = " (Hydra)";
+        //NT_FEATURE_VERSION = " (Hydra)";
       }
     }
   } else if (NT_MAJOR == 5) {
