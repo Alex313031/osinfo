@@ -41,7 +41,7 @@
  #define _WIN32_IE 0x0501 // Minimum Internet Explorer version for common controls
 #endif
 
-#if _WIN32_WINNT < 0x0601   // If we are less than Windows 7, use old ATL for safety
+#if _WIN32_WINNT < 0x0601 // If we are less than Windows 7, use old ATL for safety
  #ifndef _ATL_XP_TARGETING
   #define _ATL_XP_TARGETING // For using XP-compatible ATL/MFC functions
  #endif
