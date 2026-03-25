@@ -106,8 +106,8 @@ unsigned long combineToHex(unsigned long high, unsigned long low) {
 
 const bool DeInitOsInfoDLL() {
   // Todo add memory cleanup here.
-  WinVer     = 0u;
-  WinVerFull = 0u;
+  WinVer         = 0u;
+  WinVerFull     = 0u;
   is_initialized = false;
   return (WinVer == 0u && WinVerFull == 0u);
 }
@@ -217,7 +217,7 @@ OSINFO_API std::string const GetOSNameA() {
   std::ostringstream debugStream;
 
   if (!is_initialized) {
-      return std::string();
+    return std::string();
   }
 
   // Get the service pack
@@ -249,7 +249,7 @@ OSINFO_API std::string const GetOSNameA() {
       if (NT_SUITE == VER_SUITE_TERMINAL) {
         NT_FEATURE_VERSION = " (Cairo)";
       } else {
-        //NT_FEATURE_VERSION = " (Hydra)";
+        // NT_FEATURE_VERSION = " (Hydra)";
       }
     }
   } else if (NT_MAJOR == 5) {
@@ -672,7 +672,8 @@ OSINFO_API std::wstring const GetServicePackW() {
     if (NT_SP_MINOR == 0) {
       service_pack = L"Service Pack " + std::to_wstring(NT_SP_MAJOR);
     } else {
-      service_pack = L"Service Pack " + std::to_wstring(NT_SP_MAJOR) + L"." + std::to_wstring(NT_SP_MINOR);
+      service_pack =
+          L"Service Pack " + std::to_wstring(NT_SP_MAJOR) + L"." + std::to_wstring(NT_SP_MINOR);
     }
   } else {
     std::wstring SP(NT_CSD_VERSION);
