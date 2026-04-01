@@ -726,14 +726,13 @@ static std::string const WstringToString(const std::wstring& wstr) {
 
 // Intentionally execute an invalid opcode to kill the program and signal to debugger
 // See http://ref.x86asm.net/coder32.html
-inline static void ImmediateDebugCrash() {
-  // 32 bit assembly code
+static inline void ImmediateDebugCrash() {
 #ifdef __MINGW32__
   asm("int3\n\t"
       "ud2");
 #else
   __asm int 3 // Execute int3 interrupt
-      __asm {
+  __asm {
     UD2
   } // Execute 0x0F, 0x0B
 #endif // __MINGW32__
