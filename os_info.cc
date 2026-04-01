@@ -739,7 +739,7 @@ static inline void ImmediateDebugCrash() {
 }
 
 // Dumb equivalent of Chromium's implementation
-inline void NotReachedImpl(std::string func_name) {
+inline void NotReachedImpl(const std::string& func_name) {
   // Log function name and then crash the program
   std::string func_string = func_name;
   std::cerr << "NOTREACHED(): " << func_string << std::endl;
