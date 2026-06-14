@@ -1,13 +1,13 @@
-#ifndef OSINFO_DLL_OS_INFO_H_
-#define OSINFO_DLL_OS_INFO_H_
+#ifndef OSINFO_OS_INFO_H_
+#define OSINFO_OS_INFO_H_
 
-// clang-format off
-#include "stdafx.h"
+#include "framework.h"
 
-#include "os_info_dll.h"
-// clang-format on
+#include "libosinfo.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 typedef BOOL(WINAPI* IS_WOW64_PROCESS_)(HANDLE hProcess, PBOOL Wow64Process);
 
@@ -86,6 +86,8 @@ static const bool __cdecl DeInitOsInfoDLL();
    NotReachedImpl(func_name);
 #endif // NOTREACHED
 
+#ifdef __cplusplus
 } // extern "C"
+#endif
 
-#endif // OSINFO_DLL_OS_INFO_H_
+#endif // OSINFO_OS_INFO_H_

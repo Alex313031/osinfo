@@ -19,8 +19,15 @@ bool is_win11 = false;
 static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
 
 static bool is_initialized  = false;
-static bool was_static_load = false;
 
+static bool was_static_load =
+#ifdef OSINFO_DLL_EXPORTS
+  false;
+#else
+  true;
+#endif // OSINFO_DLL_EXPORTS
+
+#ifdef OSINFO_DLL_EXPORTS
 // Main entry point when loading/unloading .DLL from address space of another process/thread.
 // MUST have exact function signature BOOL WINAPI.
 // See https://www.transmissionzero.co.uk/computing/advanced-mingw-dll-topics/
@@ -28,9 +35,9 @@ OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvRes
   gHinstDLL = hInstDLL;
 
   switch (dwReason) {
-    // Called on LoadLibrary or static import
+    // Called on LoadLibrary or import
     case DLL_PROCESS_ATTACH: {
-      // Non-NULL means dll was statically loaded.
+      // Non-NULL means dll was statically imported.
       if (lpvReserved != nullptr) {
         was_static_load = true;
       }
@@ -90,6 +97,7 @@ OSINFO_API HRESULT DllGetVersion(DLLVERSIONINFO* pdvi) {
   // cbSize too small - unsupported structure
   return E_INVALIDARG;
 }
+#endif // OSINFO_DLL_EXPORTS
 
 float concatToFloat(int major, int minor) {
   // Count digits of the fractional part

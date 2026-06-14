@@ -1,16 +1,11 @@
-// Microsoft Visual C++ generated resource script.
-
 #define APSTUDIO_READONLY_SYMBOLS
-
-#ifndef APSTUDIO_INVOKED
-#include "version.h"
-#endif // APSTUDIO_INVOKED
 
 #define APSTUDIO_HIDDEN_SYMBOLS
 #include <windows.h>
 #undef APSTUDIO_HIDDEN_SYMBOLS
 
 #include <winres.h>
+#include "version.h"
 
 #ifdef __MINGW32__
 #include <winuser.h>
@@ -41,15 +36,15 @@ BEGIN
     BEGIN
         BLOCK "040904B0" // English Unicode
         BEGIN
-            VALUE "Comments", "https://github.com/Alex313031/osinfo"
-            VALUE "CompanyName", "Alex313031"
-            VALUE "FileDescription", "Win32 OS Info DLL"
+            VALUE "Comments", COMMENTS
+            VALUE "CompanyName", COMPANYNAME
+            VALUE "FileDescription", FILE_DESCRIPT
             VALUE "FileVersion", OSINFO_VERSION_STRING
-            VALUE "InternalName", "osinfo"
+            VALUE "InternalName", INTERNAL_NAME
             VALUE "LegalCopyright", LEGAL_COPYRIGHT
-            VALUE "LegalTrademarks", "BSD-3"
-            VALUE "OriginalFilename", "osinfo.dll"
-            VALUE "ProductName", "osinfo"
+            VALUE "LegalTrademarks", TRADEMARKS
+            VALUE "OriginalFilename", ORIG_FILENAME
+            VALUE "ProductName", PRODUCT_NAME
             VALUE "ProductVersion", OSINFO_VERSION_STRING
         END
     END

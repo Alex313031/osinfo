@@ -1,6 +1,9 @@
 #ifndef OSINFO_DLL_VERSION_H_
 #define OSINFO_DLL_VERSION_H_
 
+// This file is for specifying the target windows version, as well as application
+// version constants.
+
 // We need to define _UNICODE and UNICODE for TCHAR
 #ifndef UNICODE
  #define UNICODE
@@ -14,16 +17,11 @@
  #pragma code_page(65001) // UTF-8
 #endif
 
-// This file is for specifying the target windows version, as well as application
-// version constants.
-
 /* Including SDKDDKVer.h defines the highest available Windows platform.
    If you wish to build your application for a previous Windows platform, include WinSDKVer.h and
    set the _WIN32_WINNT macro to the platform you wish to support before including SDKDDKVer.h. */
 
-#ifndef __MINGW32__
- #include <WinSDKVer.h> // Doesn't exist in MinGW
-#endif
+#include "winsdkver.h"
 
 #ifndef _WIN32_WINNT
  #define _WIN32_WINNT 0x0500 // Windows 2000
@@ -47,34 +45,44 @@
  #endif
 #endif
 
-#ifndef __MINGW32__
- #include <SDKDDKVer.h> // Doesn't exist in MinGW
-#endif
+#include "sdkddkver.h"
 
 // clang-format off: Version DEFINES left alone
+
+// These next few lines are where we control version number and copyright year
+// Adhere to semver > semver.org
+#define MAJOR_VERSION 1
+#define MINOR_VERSION 6
+#define BUILD_VERSION 0
 
 // Macro to convert to string
 #if !defined(_STRINGIZER_)
  #define _STRINGIZER_
  #define _STRINGIZER(in) #in
  #define STRINGIZE(in) _STRINGIZER(in)
+  // Wide-string variant: L ## "x" -> L"x". Two levels so the argument expands
+ // before the L## paste widens the resulting narrow literal.
+ #define _WIDEN(in) L ## in
+ #define WIDEN(in) _WIDEN(in)
 #endif // !defined(_STRINGIZER_)
 
 // Main version constant
 #ifndef _VERSION
  // Run stringizer above
- #define _VERSION(major,minor,build) STRINGIZE(major) "." STRINGIZE(minor) "." STRINGIZE(build)
+ #define _VERSION(major,minor,build) WIDEN(STRINGIZE(major.minor.build))
 #endif // _VERSION
 
-// These next few lines are where we control version number and copyright year
-// Adhere to semver > semver.org
-#define MAJOR_VERSION 1
-#define MINOR_VERSION 5
-#define BUILD_VERSION 9
-
+// String constants
 #ifndef OSINFO_VERSION_STRING
  #define OSINFO_VERSION_STRING _VERSION(MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION)
- #define LEGAL_COPYRIGHT L"\251 2025-2026 Alex313031" // \251 is the © symbol
+ #define COMMENTS        L"https://github.com/Alex313031/osinfo" // Project GitHub URL
+ #define COMPANYNAME     L"Alex313031" // My developer name
+ #define FILE_DESCRIPT   L"Win32 OS Info DLL" // File description
+ #define PRODUCT_NAME    L"OSInfo" // Product name
+ #define INTERNAL_NAME   L"osinfo"
+ #define ORIG_FILENAME   L"osinfo.dll"
+ #define TRADEMARKS      L"BSD-3" // License
+ #define LEGAL_COPYRIGHT L"\251 2026 Alex313031" // \251 is the © symbol
 #endif // OSINFO_VERSION_STRING
 // clang-format on
 

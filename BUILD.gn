@@ -1,28 +1,67 @@
-# Copyright 2025 Alex313031
+# Copyright 2026 Alex313031
 
-group("osinfo_dll") {
+group("osinfo") {
   public_deps = [
-    ":osinfo",
+    ":osinfo_dll",
+    ":osinfo_static",
   ]
 }
 
-shared_library("osinfo") {
-  configs += [ ":osinfo_config" ]
+shared_library("osinfo_dll") {
+  configs += [
+    ":osinfo_private_config",
+    ":osinfo_shared_config",
+  ]
 
   sources = [
-    "export.h",
+    "framework.h",
+    "libosinfo.h",
     "os_info.cc",
     "os_info.h",
-    "os_info_dll.h",
     "resource.rc",
-    "stdafx.h",
     "version.h",
   ]
+
+  output_name = "osinfo"
 }
 
-config("osinfo_config") {
-  defines = [ "OSINFO_DLL_EXPORTS=1", ]
+static_library("osinfo_static") {
+  configs += [
+    ":osinfo_private_config",
+    ":osinfo_static_config",
+  ]
+
+  sources = [
+    "framework.h",
+    "libosinfo.h",
+    "os_info.cc",
+    "os_info.h",
+    "version.h",
+  ]
+
+  output_name = "osinfo"
+}
+
+# Public config for outside consumers of the .dll or static lib
+config("osinfo_public_config") {
+  include_dirs = [ "./public", ]
+}
+
+# Shared config for all osinfo source, but only for osinfo itself.
+config("osinfo_private_config") {
   include_dirs = [
     "./",
+    "./public",
   ]
+  cflags = [ "-Wunused-function" ]
+}
+
+# .dll shared library config
+config("osinfo_shared_config") {
+  # This define gates
+  defines = [ "OSINFO_DLL_EXPORTS=1", ]
+}
+
+config("osinfo_static_config") {
+  defines = [ "OSINFO_STATIC_LIB=1", ]
 }

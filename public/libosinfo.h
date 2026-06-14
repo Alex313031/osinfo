@@ -1,21 +1,38 @@
-#ifndef OSINFO_DLL_OS_INFO_DLL_H_
-#define OSINFO_DLL_OS_INFO_DLL_H_
+#ifndef OSINFO_LIBOSINFO_H_
+#define OSINFO_LIBOSINFO_H_
 
 #include <shlwapi.h>
 
-#include "export.h"
+// Tiny helper for making code that can be used for both .dlls and static .libs.
+#ifndef DLL_IMPORT
+ #define DLL_IMPORT __declspec(dllimport)
+#endif
+
+#ifndef DLL_EXPORT
+ #define DLL_EXPORT __declspec(dllexport)
+#endif
+
+// Use OSINFO_API for exported functions. When building the DLL, define
+// OSINFO_DLL_EXPORTS to export symbols. When not, they're imported (static library).
+#ifdef OSINFO_DLL_EXPORTS
+ #define OSINFO_API DLL_EXPORT
+#else
+ #define OSINFO_API DLL_IMPORT
+#endif // OSINFO_DLL_EXPORTS
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// DLL equivalent of WinMain
-OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
+#ifdef OSINFO_DLL_EXPORTS
+ // DLL equivalent of WinMain
+ OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
 
-/* DllGetVersion accepts pointer to DLLVERSIONINFO or DLLVERSIONINFO2.
- * The structure type is determined at runtime by the cbSize field. */
-// Standard version getter function for DLLs
-OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi);
+ /* DllGetVersion accepts pointer to DLLVERSIONINFO or DLLVERSIONINFO2.
+  * The structure type is determined at runtime by the cbSize field. */
+ // Standard version getter function for DLLs
+ OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi);
+#endif // OSINFO_DLL_EXPORTS
 
 // Call to init info, but to use helper functions below to get values.
 OSINFO_API const bool __cdecl InitOsInfoDll();
@@ -107,40 +124,42 @@ OSINFO_API const bool __cdecl IsWin8_1();
 OSINFO_API const bool __cdecl IsWin10();
 OSINFO_API const bool __cdecl IsWin11();
 
-// Pre-defined Typedefs for dynamically accessing
-// osinfo.dll functions using GetProcAddress (you could make up your own)
-typedef std::string (*pGetOSNameA)();
+#ifdef OSINFO_DLL_EXPORTS
+ // Pre-defined Typedefs for dynamically accessing
+ // osinfo.dll functions using GetProcAddress (you could make up your own)
+ typedef std::string (*pGetOSNameA)();
 
-typedef std::wstring (*pGetOSNameW)();
+ typedef std::wstring (*pGetOSNameW)();
 
-typedef std::string (*pGetWinVersionA)();
+ typedef std::string (*pGetWinVersionA)();
 
-typedef std::wstring (*pGetWinVersionW)();
+ typedef std::wstring (*pGetWinVersionW)();
 
-typedef std::wstring (*pGetOsInfoDllVersionW)();
+ typedef std::wstring (*pGetOsInfoDllVersionW)();
 
-typedef unsigned long long (*pGetRawNTVer)();
+ typedef unsigned long long (*pGetRawNTVer)();
 
-typedef unsigned long (*pGetShortNTVer)();
+ typedef unsigned long (*pGetShortNTVer)();
 
-typedef BOOL (*pIsWin)(const ULONG);
-typedef BOOL (*pIsAtLeast)(const ULONG);
-typedef BOOL (*pIsWinNewerThan)(const ULONG);
-typedef BOOL (*pIsWinOlderThan)(const ULONG);
-typedef BOOL (*pIsWinNT4)();
-typedef BOOL (*pIsWin2K)();
-typedef BOOL (*pIsWinXP)();
-typedef BOOL (*pIsWin2003)();
-typedef BOOL (*pIsWinVista)();
-typedef BOOL (*pIsWin7)();
-typedef BOOL (*pIsWin8)();
-typedef BOOL (*pIsWin8_1)();
-typedef BOOL (*pIsWin10)();
-typedef BOOL (*pIsWin11)();
-typedef BOOL (*pIsWoW64)();
+ typedef BOOL (*pIsWin)(const ULONG);
+ typedef BOOL (*pIsAtLeast)(const ULONG);
+ typedef BOOL (*pIsWinNewerThan)(const ULONG);
+ typedef BOOL (*pIsWinOlderThan)(const ULONG);
+ typedef BOOL (*pIsWinNT4)();
+ typedef BOOL (*pIsWin2K)();
+ typedef BOOL (*pIsWinXP)();
+ typedef BOOL (*pIsWin2003)();
+ typedef BOOL (*pIsWinVista)();
+ typedef BOOL (*pIsWin7)();
+ typedef BOOL (*pIsWin8)();
+ typedef BOOL (*pIsWin8_1)();
+ typedef BOOL (*pIsWin10)();
+ typedef BOOL (*pIsWin11)();
+ typedef BOOL (*pIsWoW64)();
+#endif // OSINFO_DLL_EXPORTS
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // OSINFO_DLL_OS_INFO_DLL_H_
+#endif // OSINFO_LIBOSINFO_H_

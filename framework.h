@@ -1,5 +1,5 @@
-#ifndef OSINFO_STDAFX_H_
-#define OSINFO_STDAFX_H_
+#ifndef OSINFO_FRAMEWORK_H_
+#define OSINFO_FRAMEWORK_H_
 
 #include "./version.h"
 
@@ -31,22 +31,51 @@
 
 /* Defines handling */
 
+#ifndef __cplusplus
+ #error This library requires a C++ compiler
+#endif // !__cplusplus
+
+#if __cplusplus < 201103L
+ // For old compilers without constexpr or inline
+ #if !defined(constexpr) || !defined(__cpp_constexpr)
+  #define constexpr const
+ #endif // constexpr
+ #define inline
+#endif // __cplusplus < 201103L
+
+// Alias
 #ifndef __FUNC__
  #define __FUNC__ __func__
 #endif
 
+// Convert compiler defines to usable bools
 inline constexpr bool is_dcheck =
-#ifdef DCHECK
+#ifdef DCHECK_ON
     true;
 #else
     false;
-#endif // DCHECK
+#endif // DCHECK_ON
 
 inline constexpr bool is_debug =
 #if defined(DEBUG) || defined(_DEBUG)
     true;
 #else
     false;
-#endif // defined(DEBUG) || defined(_DEBUG)
+#endif // DEBUG || _DEBUG
 
-#endif // OSINFO_STDAFX_H_
+// Universal pre-processer check for x86_64 arch is nonexistant. Make our own.
+inline constexpr bool is_x64 =
+#if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+  true;
+  #define IS_X64
+#else
+  #define IS_X86
+  false;
+#endif // defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
+
+// Sanity check of above
+#if defined(IS_X86) && defined(IS_X64)
+ #error IS_X86 and IS_X64 both defined!
+#endif
+
+#endif // OSINFO_FRAMEWORK_H_
