@@ -4,7 +4,7 @@
 #include "framework.h"
 
 // Manual relative include
-#include "./public/libosinfo.h"
+#include "../public/libosinfo.h"
 
 #ifdef __cplusplus
 extern "C" {

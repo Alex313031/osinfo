@@ -23,7 +23,7 @@ static bool is_initialized  = false;
 #ifndef OSINFO_STATIC_LIB
 static bool was_static_load = false;
 // Main entry point when loading/unloading .DLL from address space of another process/thread.
-// MUST have exact function signature BOOL WINAPI.
+// MUST have exact function signature BOOL WINAPI. DLL equivalent of WinMain.
 // See https://www.transmissionzero.co.uk/computing/advanced-mingw-dll-topics/
 OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved) {
   gHinstDLL = hInstDLL;

@@ -16,13 +16,15 @@ shared_library("osinfo_dll") {
   configs += [ ":osinfo_private_config", ]
   defines = [ "OSINFO_DLL_EXPORTS=1", ]
 
+  precompiled_header = "src/framework.h"
+  precompiled_source = "src/pch.pch"
   sources = [
-    "framework.h",
-    "libosinfo.h",
-    "os_info.cc",
-    "os_info.h",
-    "resource.rc",
-    "version.h",
+    "public/libosinfo.h",
+    "src/framework.h",
+    "src/os_info.cc",
+    "src/os_info.h",
+    "src/resource.rc",
+    "src/version.h",
   ]
 
   output_name = "osinfo"
@@ -33,12 +35,14 @@ static_library("osinfo_static") {
   configs += [ ":osinfo_private_config", ]
   defines = [ "OSINFO_STATIC_LIB=1", ]
 
+  precompiled_header = "src/framework.h"
+  precompiled_source = "src/pch.pch"
   sources = [
-    "framework.h",
-    "libosinfo.h",
-    "os_info.cc",
-    "os_info.h",
-    "version.h",
+    "public/libosinfo.h",
+    "src/framework.h",
+    "src/os_info.cc",
+    "src/os_info.h",
+    "src/version.h",
   ]
 
   output_name = "osinfo"
@@ -46,7 +50,7 @@ static_library("osinfo_static") {
 
 # Private config for osinfo itself, shared/static agnostic.
 config("osinfo_private_config") {
-  include_dirs = [ "./", ]
+  include_dirs = [ "./src", ]
   cflags = [ "-Wunused-function" ]
 }
 

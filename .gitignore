@@ -30,3 +30,5 @@ Thumbs.db
 *Debug/
 *Release/
 osinfo.dll
+libosinfo.a
+libosinfo.dll.a

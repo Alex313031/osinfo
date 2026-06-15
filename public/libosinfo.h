@@ -1,7 +1,9 @@
 #ifndef OSINFO_LIBOSINFO_H_
 #define OSINFO_LIBOSINFO_H_
 
-#include <shlwapi.h>
+#ifndef OSINFO_STATIC_LIB
+ #include <shlwapi.h>
+#endif // OSINFO_STATIC_LIB
 
 // Tiny helper for making code that can be used for both .dlls and static .libs.
 #ifndef DLL_IMPORT
@@ -27,9 +29,6 @@ extern "C" {
 #endif
 
 #ifndef OSINFO_STATIC_LIB
- // DLL equivalent of WinMain
- OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
-
  /* DllGetVersion accepts pointer to DLLVERSIONINFO or DLLVERSIONINFO2.
   * The structure type is determined at runtime by the cbSize field. */
  // Standard version getter function for DLLs
