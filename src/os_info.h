@@ -16,7 +16,9 @@ extern unsigned long WinVer;
 
 extern unsigned long long WinVerFull;
 
-extern HINSTANCE gHinstDLL;
+#ifndef OSINFO_STATIC_LIB
+ extern HINSTANCE gHinstDLL;
+#endif // !OSINFO_STATIC_LIB
 
 extern bool is_winnt;
 extern bool is_win2k;
@@ -64,7 +66,7 @@ static std::string NT_FEATURE_VERSION;
 
 static std::string NT_POST_STRING;
 
-static unsigned long __cdecl combineToHex(unsigned long high, unsigned long low);
+unsigned long __cdecl combineToHex(unsigned long high, unsigned long low);
 
 static std::string const __cdecl GetNTString();
 

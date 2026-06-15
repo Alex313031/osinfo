@@ -1,7 +1,5 @@
 #include "os_info.h"
 
-HINSTANCE gHinstDLL = nullptr;
-
 static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
 
 unsigned long WinVer = 0L;
@@ -21,7 +19,10 @@ bool is_win11 = false;
 static bool is_initialized  = false;
 
 #ifndef OSINFO_STATIC_LIB
+HINSTANCE gHinstDLL = nullptr;
+
 static bool was_static_load = false;
+
 // Main entry point when loading/unloading .DLL from address space of another process/thread.
 // MUST have exact function signature BOOL WINAPI. DLL equivalent of WinMain.
 // See https://www.transmissionzero.co.uk/computing/advanced-mingw-dll-topics/
@@ -94,11 +95,11 @@ OSINFO_API HRESULT DllGetVersion(DLLVERSIONINFO* pdvi) {
 }
 
 OSINFO_API bool InitOsInfoDll() {
-  const bool ret = GetWinNTVersion();
-  if (ret) {
-    is_initialized = true;
+  const bool got_ntver = GetWinNTVersion();
+  if (got_ntver) {
+    is_initialized = (gHinstDLL != nullptr);
   }
-  return ret;
+  return got_ntver && is_initialized;
 }
 
 OSINFO_API bool DeInitOsInfoDLL() {
@@ -118,7 +119,7 @@ OSINFO_API bool DeInitOsInfoDLL() {
   return retval;
 }
 
-static unsigned long combineToHex(unsigned long high, unsigned long low) {
+unsigned long combineToHex(unsigned long high, unsigned long low) {
   return (high << 8) | (low & 0xFF);
 }
 
