@@ -3,7 +3,8 @@
 
 #include "framework.h"
 
-#include "libosinfo.h"
+// Manual relative include
+#include "./public/libosinfo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +48,7 @@ static ULONG NT_MINOR;
 
 static ULONG NT_BUILD;
 
-wchar_t NT_CSD_VERSION[128]{};
+static wchar_t NT_CSD_VERSION[128]{};
 
 static USHORT NT_SP_MAJOR;
 
@@ -57,15 +58,13 @@ static USHORT NT_SUITE;
 
 static UCHAR NT_TYPE;
 
-std::string NT_SERVICE_PACK;
+static std::string NT_SERVICE_PACK;
 
-std::string NT_FEATURE_VERSION;
+static std::string NT_FEATURE_VERSION;
 
-std::string NT_POST_STRING;
+static std::string NT_POST_STRING;
 
-float __cdecl concatToFloat(int major, int minor);
-
-unsigned long __cdecl combineToHex(unsigned long high, unsigned long low);
+static unsigned long __cdecl combineToHex(unsigned long high, unsigned long low);
 
 static std::string const __cdecl GetNTString();
 
@@ -74,9 +73,6 @@ static std::wstring const __cdecl StringToWstring(const std::string& str);
 static std::string const __cdecl WstringToString(const std::wstring& wstr);
 
 inline void __cdecl NotReachedImpl(const std::string& func_name);
-
-// Opposite of InitOsInfoDLL, but only to be called privately.
-static const bool __cdecl DeInitOsInfoDLL();
 
 #define __FUNC__ __func__
 

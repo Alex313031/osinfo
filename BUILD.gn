@@ -1,5 +1,9 @@
-# Copyright 2026 Alex313031
+# Copyright (c) 2026 Alex313031
 
+# osinfo is a static/shared library for retrieving Windows OS version information.
+# It also provides CPU information like number of cores, raw model number, and SIMD support levels.
+
+# Build everything
 group("osinfo") {
   public_deps = [
     ":osinfo_dll",
@@ -7,11 +11,10 @@ group("osinfo") {
   ]
 }
 
+# Builds osinfo.dll
 shared_library("osinfo_dll") {
-  configs += [
-    ":osinfo_private_config",
-    ":osinfo_shared_config",
-  ]
+  configs += [ ":osinfo_private_config", ]
+  defines = [ "OSINFO_DLL_EXPORTS=1", ]
 
   sources = [
     "framework.h",
@@ -25,11 +28,10 @@ shared_library("osinfo_dll") {
   output_name = "osinfo"
 }
 
+# Builds libosinfo.a (or .lib for MSVC)
 static_library("osinfo_static") {
-  configs += [
-    ":osinfo_private_config",
-    ":osinfo_static_config",
-  ]
+  configs += [ ":osinfo_private_config", ]
+  defines = [ "OSINFO_STATIC_LIB=1", ]
 
   sources = [
     "framework.h",
@@ -42,26 +44,20 @@ static_library("osinfo_static") {
   output_name = "osinfo"
 }
 
-# Public config for outside consumers of the .dll or static lib
-config("osinfo_public_config") {
-  include_dirs = [ "./public", ]
-}
-
-# Shared config for all osinfo source, but only for osinfo itself.
+# Private config for osinfo itself, shared/static agnostic.
 config("osinfo_private_config") {
-  include_dirs = [
-    "./",
-    "./public",
-  ]
+  include_dirs = [ "./", ]
   cflags = [ "-Wunused-function" ]
 }
 
-# .dll shared library config
+# Public shared lib config for outside consumers of the .dll
 config("osinfo_shared_config") {
-  # This define gates
-  defines = [ "OSINFO_DLL_EXPORTS=1", ]
+  defines = [ "OSINFO_DLL_IMPORTS=1", "SHARED_OSINFO", ]
+  include_dirs = [ "./public", ]
 }
 
+# Public static lib config for outside consumers of the .lib/.a
 config("osinfo_static_config") {
-  defines = [ "OSINFO_STATIC_LIB=1", ]
+  defines = [ "OSINFO_STATIC_LIB=1", "STATIC_OSINFO", ]
+  include_dirs = [ "./public", ]
 }

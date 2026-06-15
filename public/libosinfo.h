@@ -13,18 +13,20 @@
 #endif
 
 // Use OSINFO_API for exported functions. When building the DLL, define
-// OSINFO_DLL_EXPORTS to export symbols. When not, they're imported (static library).
-#ifdef OSINFO_DLL_EXPORTS
+// OSINFO_DLL_EXPORTS to export symbols.
+#if defined(OSINFO_DLL_EXPORTS) // For use by osinfo when building DLL
  #define OSINFO_API DLL_EXPORT
-#else
+#elif defined(OSINFO_DLL_IMPORTS) // Only for use by consumers (of either statis lib or .dll).
  #define OSINFO_API DLL_IMPORT
+#elif defined(OSINFO_STATIC_LIB) // For use by osinfo when building static library.
+ #define OSINFO_API
 #endif // OSINFO_DLL_EXPORTS
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef OSINFO_DLL_EXPORTS
+#ifndef OSINFO_STATIC_LIB
  // DLL equivalent of WinMain
  OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvReserved);
 
@@ -32,10 +34,15 @@ extern "C" {
   * The structure type is determined at runtime by the cbSize field. */
  // Standard version getter function for DLLs
  OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi);
-#endif // OSINFO_DLL_EXPORTS
 
-// Call to init info, but to use helper functions below to get values.
-OSINFO_API const bool __cdecl InitOsInfoDll();
+ // Use to init .dll, but use EnsureInitialized() for everything else.
+ OSINFO_API bool __cdecl InitOsInfoDll();
+ // Opposite of InitOsInfoDLL, but only to be called privately.
+ OSINFO_API bool __cdecl DeInitOsInfoDLL();
+#endif // !OSINFO_STATIC_LIB
+
+// Ensures we are initialized.
+OSINFO_API bool __cdecl EnsureInitialized();
 
 // Main function that gets the Windows version number.
 // Called by InitOSInfoDLl and as needed in other functions to grab the version.
@@ -55,7 +62,7 @@ OSINFO_API std::string const __cdecl GetWinVersionA();
 OSINFO_API std::wstring const __cdecl GetWinVersionW();
 
 // Returns the version string of the dll itself.
-OSINFO_API std::wstring const __cdecl GetOsInfoDllVersionW();
+OSINFO_API std::wstring const __cdecl GetOsInfoVersionW();
 
 // Returns an unsigned long long representing the full NT build number.
 // For example, for Windows 7 SP1, it would return 0x6011DB1.
@@ -124,7 +131,7 @@ OSINFO_API const bool __cdecl IsWin8_1();
 OSINFO_API const bool __cdecl IsWin10();
 OSINFO_API const bool __cdecl IsWin11();
 
-#ifdef OSINFO_DLL_EXPORTS
+#ifndef OSINFO_STATIC_LIB
  // Pre-defined Typedefs for dynamically accessing
  // osinfo.dll functions using GetProcAddress (you could make up your own)
  typedef std::string (*pGetOSNameA)();
@@ -135,7 +142,7 @@ OSINFO_API const bool __cdecl IsWin11();
 
  typedef std::wstring (*pGetWinVersionW)();
 
- typedef std::wstring (*pGetOsInfoDllVersionW)();
+ typedef std::wstring (*pGetOsInfoVersionW)();
 
  typedef unsigned long long (*pGetRawNTVer)();
 
@@ -156,7 +163,7 @@ OSINFO_API const bool __cdecl IsWin11();
  typedef BOOL (*pIsWin10)();
  typedef BOOL (*pIsWin11)();
  typedef BOOL (*pIsWoW64)();
-#endif // OSINFO_DLL_EXPORTS
+#endif // !OSINFO_STATIC_LIB
 
 #ifdef __cplusplus
 } // extern "C"

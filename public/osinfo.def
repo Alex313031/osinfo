@@ -1,10 +1,12 @@
 LIBRARY "osinfo.dll"
 EXPORTS
+DeInitOsInfoDLL
 DllGetVersion
 DllMain@12@12
+EnsureInitialized
 GetOSNameA
 GetOSNameW
-GetOsInfoDllVersionW
+GetOsInfoVersionW
 GetRawNTVer
 GetServicePackA
 GetServicePackNumber
