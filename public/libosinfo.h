@@ -82,23 +82,45 @@ OSINFO_API std::string const __cdecl GetServicePackA();
 OSINFO_API std::wstring const __cdecl GetServicePackW();
 
 // USE THESE for the below IsAtLeast() function;
+// Windows NT 4.0 (and Terminal Server)
 inline constexpr unsigned long kWinNT4       = 0x0400L;
+// Windows 2000 (and 2000 Server)
 inline constexpr unsigned long kWin2000      = 0x0500L;
 inline constexpr unsigned long kWin2K        = kWin2000;
+inline constexpr unsigned long kWinSrv2000   = kWin2000;
+// Windows XP
 inline constexpr unsigned long kWinXP        = 0x0501L;
+inline constexpr unsigned long kWinWhistler  = kWinXP;
+// Windows XP x64/Server 2003 (and 2003 R2)
 inline constexpr unsigned long kWinSrv2003   = 0x0502L;
+inline constexpr unsigned long kWinSrv2003R2 = kWinSrv2003;
+inline constexpr unsigned long kWin2003      = kWinSrv2003;
+inline constexpr unsigned long kWin2003R2    = kWinSrv2003;
+inline constexpr unsigned long kWinXP64      = kWinSrv2003;
 inline constexpr unsigned long kWinXPx64     = kWinSrv2003;
+// Windows Vista/Server 2008
 inline constexpr unsigned long kWinVista     = 0x0600L;
 inline constexpr unsigned long kWinSrv2008   = kWinVista;
+inline constexpr unsigned long kWin2008      = kWinVista;
+inline constexpr unsigned long kWinLonghorn  = kWinVista;
+// Windows 7/Server 2008 R2/Home Server 2011
 inline constexpr unsigned long kWin7         = 0x0601L;
 inline constexpr unsigned long kWinSrv2008R2 = kWin7;
+inline constexpr unsigned long kWin2008R2    = kWin7;
+inline constexpr unsigned long kWin2011      = kWin2008R2;
+// Windows 8/Server 2012
 inline constexpr unsigned long kWin8         = 0x0602L;
 inline constexpr unsigned long kWinSrv2012   = kWin8;
+inline constexpr unsigned long kWin2012      = kWin8;
+// Windows 8.1/Server 2012 R2
 inline constexpr unsigned long kWin81        = 0x0603L;
 inline constexpr unsigned long kWinSrv2012R2 = kWin81;
-inline constexpr unsigned long kWinBlue      = kWin81;
+inline constexpr unsigned long kWin2012R2    = kWin81;
+inline constexpr unsigned long kWinBlue      = kWin2012R2;
+// Windows 10
 inline constexpr unsigned long kWin10        = 0x0A00L;
-inline constexpr unsigned long kWin11        = kWin10;
+// Windows 11
+inline constexpr unsigned long kWin11        = 0x0A00L; // Win11 isn't higher
 
 // Bool to check if Windows version is exactly the one passed in check_ver
 OSINFO_API const bool __cdecl IsWin(const unsigned long check_ver);
