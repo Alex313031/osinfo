@@ -4,6 +4,7 @@ DeInitOsInfoDLL
 DllGetVersion
 DllMain@12@12
 EnsureInitialized
+GetCPUInfo
 GetOSNameA
 GetOSNameW
 GetOsInfoVersionW

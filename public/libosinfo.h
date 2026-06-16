@@ -1,28 +1,14 @@
 #ifndef OSINFO_LIBOSINFO_H_
 #define OSINFO_LIBOSINFO_H_
 
+#include "cpuinfo.h"
+
 #ifndef OSINFO_STATIC_LIB
  #include <shlwapi.h>
 #endif // OSINFO_STATIC_LIB
 
-// Tiny helper for making code that can be used for both .dlls and static .libs.
-#ifndef DLL_IMPORT
- #define DLL_IMPORT __declspec(dllimport)
-#endif
-
-#ifndef DLL_EXPORT
- #define DLL_EXPORT __declspec(dllexport)
-#endif
-
-// Use OSINFO_API for exported functions. When building the DLL, define
-// OSINFO_DLL_EXPORTS to export symbols.
-#if defined(OSINFO_DLL_EXPORTS) // For use by osinfo when building DLL
- #define OSINFO_API DLL_EXPORT
-#elif defined(OSINFO_DLL_IMPORTS) // Only for use by consumers (of either statis lib or .dll).
- #define OSINFO_API DLL_IMPORT
-#elif defined(OSINFO_STATIC_LIB) // For use by osinfo when building static library.
- #define OSINFO_API
-#endif // OSINFO_DLL_EXPORTS
+// The DLL_IMPORT/DLL_EXPORT/OSINFO_API export macros are defined in cpuinfo.h,
+// which is included above.
 
 #ifdef __cplusplus
 extern "C" {

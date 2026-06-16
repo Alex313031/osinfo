@@ -19,7 +19,10 @@ shared_library("osinfo_dll") {
   precompiled_header = "src/framework.h"
   precompiled_source = "src/pch.pch"
   sources = [
+    "public/cpuinfo.h",
     "public/libosinfo.h",
+    "src/cpu.cc",
+    "src/cpu.h",
     "src/framework.h",
     "src/os_info.cc",
     "src/os_info.h",
@@ -38,7 +41,10 @@ static_library("osinfo_static") {
   precompiled_header = "src/framework.h"
   precompiled_source = "src/pch.pch"
   sources = [
+    "public/cpuinfo.h",
     "public/libosinfo.h",
+    "src/cpu.cc",
+    "src/cpu.h",
     "src/framework.h",
     "src/os_info.cc",
     "src/os_info.h",

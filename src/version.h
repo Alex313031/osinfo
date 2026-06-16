@@ -52,7 +52,7 @@
 // These next few lines are where we control version number and copyright year
 // Adhere to semver > semver.org
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 6
+#define MINOR_VERSION 7
 #define BUILD_VERSION 1
 
 // Macro to convert to string

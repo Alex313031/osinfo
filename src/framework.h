@@ -23,6 +23,7 @@
 
 // C++ STL Headers
 #include <cmath>     // For C-style math functions
+#include <cstdint>   // Other number types
 #include <iomanip>   // std::setprecision
 #include <iostream>  // std::cout std::wcout
 #include <sstream>   // std::ostringstream std::wostringstream

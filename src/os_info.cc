@@ -1,4 +1,10 @@
+// Copyright (c) 2026 Alex313031
+
+// Main functions of the OSInfo library, compiles to either a static lib or shared .dll
+
 #include "os_info.h"
+
+#include "cpu.h"
 
 static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
 
@@ -845,7 +851,7 @@ OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver) {
 OSINFO_API const bool IsWoW64() {
   BOOL isWoW64 = false;
 
-  HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+  HMODULE hKernel32 = GetModuleHandleW(kKernel32Dll);
   if (IsWinOlderThan(NTVER_XP) || !hKernel32) {
     pIsWow64Process = nullptr;
     isWoW64         = false;
