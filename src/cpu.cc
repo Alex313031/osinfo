@@ -24,12 +24,12 @@ struct VendorMap {
 };
 
 // Returns bit n of v as a bool.
-static inline bool BitCheck(uint32_t v, unsigned int n) {
+static inline bool __cdecl BitCheck(uint32_t v, unsigned int n) {
   return ((v >> n) & 1u) != 0u;
 }
 
 // Fills regs[4] = {EAX, EBX, ECX, EDX} for the given CPUID leaf/subleaf.
-static void FillRegInfo(uint32_t leaf, uint32_t subleaf, uint32_t regs[4]) {
+static void __cdecl FillRegInfo(uint32_t leaf, uint32_t subleaf, uint32_t regs[4]) {
 #if defined(_MSC_VER)
   int r[4];
   __cpuidex(r, static_cast<int>(leaf), static_cast<int>(subleaf));
@@ -49,7 +49,7 @@ static void FillRegInfo(uint32_t leaf, uint32_t subleaf, uint32_t regs[4]) {
 
 // Highest supported leaf for a CPUID range base (0 for standard, 0x80000000 for
 // extended). Returns 0 if the range / CPUID itself is unavailable.
-static uint32_t GetLeafCount(uint32_t base) {
+static uint32_t __cdecl GetLeafCount(uint32_t base) {
 #if defined(_MSC_VER)
   uint32_t regs[4];
   FillRegInfo(base, 0u, regs);
@@ -72,7 +72,7 @@ static constexpr uint64_t kXcr0Avx512Mask = 0xE6u;
 
 // Reads extended control register XCR0 via XGETBV. ONLY call this when CPUID
 // reports OSXSAVE (CPUID.1:ECX[27]); executing XGETBV otherwise faults (#UD).
-static uint64_t ReadXcr0() {
+static uint64_t __cdecl ReadXcr0() {
 #if defined(_MSC_VER)
   return _xgetbv(0);
 #else
@@ -84,7 +84,7 @@ static uint64_t ReadXcr0() {
 }
 
 // Maps the 12-byte CPUID leaf-0 vendor string to a CPU_VENDOR.
-static int MapVendor(const char vendor[kVendorLeafSize]) {
+static int __cdecl MapVendor(const char vendor[kVendorLeafSize]) {
   // Anything not listed here falls through to VENDOR_UNKNOWN.
   static const VendorMap kVendors[] = {
       {"GenuineIntel", VENDOR_INTEL},   {"AuthenticAMD", VENDOR_AMD},
@@ -102,7 +102,7 @@ static int MapVendor(const char vendor[kVendorLeafSize]) {
 
 // Copies the (ASCII) CPU brand string into the wide raw_model field, trimming
 // the leading padding spaces that brand strings commonly carry.
-static void FormatBrandString(CPUID_INFO* info, const char brand[48]) {
+static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[48]) {
   // Bounded, null-terminated source copy first.
   char ascii[49];
   memcpy(ascii, brand, 48);

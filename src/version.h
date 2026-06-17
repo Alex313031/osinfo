@@ -53,7 +53,7 @@
 // Adhere to semver > semver.org
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 7
-#define BUILD_VERSION 2
+#define BUILD_VERSION 3
 
 // Macro to convert to string
 #if !defined(_STRINGIZER_)

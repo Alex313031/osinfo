@@ -70,7 +70,7 @@ OSINFO_API BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD dwReason, LPVOID lpvRes
   }
 }
 
-OSINFO_API HRESULT DllGetVersion(DLLVERSIONINFO* pdvi) {
+OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi) {
   if (pdvi == nullptr || !EnsureInitialized()) {
     return E_POINTER;
   }
@@ -100,7 +100,7 @@ OSINFO_API HRESULT DllGetVersion(DLLVERSIONINFO* pdvi) {
   return E_INVALIDARG;
 }
 
-OSINFO_API bool InitOsInfoDll() {
+OSINFO_API bool __cdecl InitOsInfoDll() {
   const bool got_ntver = GetWinNTVersion();
   if (got_ntver) {
     is_initialized = (gHinstDLL != nullptr);
@@ -108,7 +108,7 @@ OSINFO_API bool InitOsInfoDll() {
   return got_ntver && is_initialized;
 }
 
-OSINFO_API bool DeInitOsInfoDLL() {
+OSINFO_API bool __cdecl DeInitOsInfoDLL() {
   // Todo add memory cleanup here.
   WinVer         = 0L;
   WinVerFull     = 0LL;
@@ -116,7 +116,7 @@ OSINFO_API bool DeInitOsInfoDLL() {
 }
 #endif // !OSINFO_STATIC_LIB
 
-[[maybe_unused]] static float concatToFloat(int major, int minor) {
+[[maybe_unused]] static float __cdecl concatToFloat(int major, int minor) {
   // Count digits of the fractional part
   int digits = (minor == 0) ? 1 : std::to_string(minor).size();
 
@@ -125,11 +125,11 @@ OSINFO_API bool DeInitOsInfoDLL() {
   return retval;
 }
 
-unsigned long combineToHex(unsigned long high, unsigned long low) {
+unsigned long __cdecl combineToHex(unsigned long high, unsigned long low) {
   return (high << 8) | (low & 0xFF);
 }
 
-OSINFO_API bool EnsureInitialized() {
+OSINFO_API bool __cdecl EnsureInitialized() {
   // Static lib has no DllMain, so initialize lazily on first use. In the .dll
   // DllMain already set is_initialized via InitOsInfoDll().
   if (!is_initialized) {
@@ -138,7 +138,7 @@ OSINFO_API bool EnsureInitialized() {
   return is_initialized;
 }
 
-OSINFO_API bool GetWinNTVersion() {
+OSINFO_API bool __cdecl GetWinNTVersion() {
   bool success = false;
   // Use RtlGetVersion from winnt.h, not wdm.h
   NTSTATUS(WINAPI * RtlGetVersion)(LPOSVERSIONINFOEXW);
@@ -232,7 +232,7 @@ OSINFO_API bool GetWinNTVersion() {
 }
 
 // Use WINNT API functions to get OS and system information
-OSINFO_API std::string const GetOSNameA() {
+OSINFO_API std::string const __cdecl GetOSNameA() {
   // Human readable OS name
   std::string OsVer;
   // For obscure versions or pre NT4 SP6
@@ -621,11 +621,11 @@ OSINFO_API std::string const GetOSNameA() {
   return OsVer;
 }
 
-OSINFO_API std::wstring const GetOSNameW() {
+OSINFO_API std::wstring const __cdecl GetOSNameW() {
   return StringToWstring(GetOSNameA());
 }
 
-static std::string const GetNTString() {
+static std::string const __cdecl GetNTString() {
   // NT version number
   std::string NtVer;
   std::ostringstream debugStream;
@@ -645,16 +645,16 @@ static std::string const GetNTString() {
   return NtVer;
 }
 
-OSINFO_API std::string const GetWinVersionA() {
+OSINFO_API std::string const __cdecl GetWinVersionA() {
   const std::string ver = GetNTString();
   return ver;
 }
 
-OSINFO_API std::wstring const GetWinVersionW() {
+OSINFO_API std::wstring const __cdecl GetWinVersionW() {
   return StringToWstring(GetWinVersionA());
 }
 
-OSINFO_API unsigned long long const GetRawNTVer() {
+OSINFO_API unsigned long long const __cdecl GetRawNTVer() {
   if (!EnsureInitialized()) {
     return 0;
   }
@@ -664,7 +664,7 @@ OSINFO_API unsigned long long const GetRawNTVer() {
   return retval;
 }
 
-OSINFO_API unsigned long const GetShortNTVer() {
+OSINFO_API unsigned long const __cdecl GetShortNTVer() {
   if (!EnsureInitialized()) {
     return 0;
   }
@@ -673,7 +673,7 @@ OSINFO_API unsigned long const GetShortNTVer() {
   return retval;
 }
 
-OSINFO_API int const GetServicePackNumber() {
+OSINFO_API int const __cdecl GetServicePackNumber() {
   if (!EnsureInitialized()) {
     return -1;
   }
@@ -681,11 +681,11 @@ OSINFO_API int const GetServicePackNumber() {
   return kSPMajor;
 }
 
-OSINFO_API std::string const GetServicePackA() {
+OSINFO_API std::string const __cdecl GetServicePackA() {
   return WstringToString(GetServicePackW());
 }
 
-OSINFO_API std::wstring const GetServicePackW() {
+OSINFO_API std::wstring const __cdecl GetServicePackW() {
   // Get the service pack
   const bool fallback = NT_MAJOR < 6;
   std::wstring service_pack;
@@ -703,7 +703,7 @@ OSINFO_API std::wstring const GetServicePackW() {
   return service_pack;
 }
 
-static std::wstring const StringToWstring(const std::string& str) {
+static std::wstring const __cdecl StringToWstring(const std::string& str) {
   if (str.empty()) {
     return std::wstring();
   }
@@ -724,7 +724,7 @@ static std::wstring const StringToWstring(const std::string& str) {
   return result;
 }
 
-static std::string const WstringToString(const std::wstring& wstr) {
+static std::string const __cdecl WstringToString(const std::wstring& wstr) {
   if (wstr.empty()) {
     return std::string();
   }
@@ -747,7 +747,7 @@ static std::string const WstringToString(const std::wstring& wstr) {
 
 // Intentionally execute an invalid opcode to kill the program and signal to debugger
 // See http://ref.x86asm.net/coder32.html
-static inline void ImmediateDebugCrash() {
+static inline void __cdecl ImmediateDebugCrash() {
 #ifdef __MINGW32__
   asm("int3\n\t"
       "ud2");
@@ -773,7 +773,7 @@ __cdecl void NotReachedImpl(const std::string& func_name) {
   }
 }
 
-OSINFO_API const std::wstring GetOsInfoVersionW() {
+OSINFO_API const std::wstring __cdecl GetOsInfoVersionW() {
   if (!EnsureInitialized()) {
     return std::wstring();
   }
@@ -783,78 +783,78 @@ OSINFO_API const std::wstring GetOsInfoVersionW() {
   return retval;
 }
 
-OSINFO_API const bool IsWinNT4() {
+OSINFO_API const bool __cdecl IsWinNT4() {
   EnsureInitialized();
   return is_winnt;
 }
-OSINFO_API const bool IsWin2K() {
+OSINFO_API const bool __cdecl IsWin2K() {
   EnsureInitialized();
   return is_win2k;
 }
-OSINFO_API const bool IsWinXP() {
+OSINFO_API const bool __cdecl IsWinXP() {
   EnsureInitialized();
   return is_winxp;
 }
-OSINFO_API const bool IsWin2003() {
+OSINFO_API const bool __cdecl IsWin2003() {
   EnsureInitialized();
   return is_win03;
 }
-OSINFO_API const bool IsWinVista() {
+OSINFO_API const bool __cdecl IsWinVista() {
   EnsureInitialized();
   return is_win06;
 }
-OSINFO_API const bool IsWin7() {
+OSINFO_API const bool __cdecl IsWin7() {
   EnsureInitialized();
   return is_win7;
 }
-OSINFO_API const bool IsWin8() {
+OSINFO_API const bool __cdecl IsWin8() {
   EnsureInitialized();
   return is_win8;
 }
-OSINFO_API const bool IsWin8_1() {
+OSINFO_API const bool __cdecl IsWin8_1() {
   EnsureInitialized();
   return is_win81;
 }
-OSINFO_API const bool IsWin10() {
+OSINFO_API const bool __cdecl IsWin10() {
   EnsureInitialized();
   return is_win10;
 }
-OSINFO_API const bool IsWin11() {
+OSINFO_API const bool __cdecl IsWin11() {
   EnsureInitialized();
   return is_win11;
 }
 
-OSINFO_API const bool IsWin(const unsigned long check_ver) {
+OSINFO_API const bool __cdecl IsWin(const unsigned long check_ver) {
   EnsureInitialized();
   const bool is_ver = WinVer == check_ver;
   return is_ver;
 }
 
-OSINFO_API const bool IsAtLeast(const unsigned long check_ver) {
+OSINFO_API const bool __cdecl IsAtLeast(const unsigned long check_ver) {
   EnsureInitialized();
   const bool is_at_least = WinVer >= check_ver;
   return is_at_least;
 }
 
-OSINFO_API const bool IsAtMost(const unsigned long check_ver) {
+OSINFO_API const bool __cdecl IsAtMost(const unsigned long check_ver) {
   EnsureInitialized();
   const bool is_at_least = WinVer <= check_ver;
   return is_at_least;
 }
 
-OSINFO_API const bool IsWinNewerThan(const unsigned long check_ver) {
+OSINFO_API const bool __cdecl IsWinNewerThan(const unsigned long check_ver) {
   EnsureInitialized();
   const bool is_newer = WinVer > check_ver;
   return is_newer;
 }
 
-OSINFO_API const bool IsWinOlderThan(const unsigned long check_ver) {
+OSINFO_API const bool __cdecl IsWinOlderThan(const unsigned long check_ver) {
   EnsureInitialized();
   const bool is_older = WinVer < check_ver;
   return is_older;
 }
 
-OSINFO_API const bool IsWoW64() {
+OSINFO_API const bool __cdecl IsWoW64() {
   BOOL isWoW64 = false;
 
   HMODULE hKernel32 = GetModuleHandleW(kKernel32Dll);
