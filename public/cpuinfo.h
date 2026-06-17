@@ -49,26 +49,26 @@ enum CPU_VENDOR {
 // callers should zero-initialize it (e.g. CPUID_INFO info = {};) and pass it to
 // GetCPUInfo(), which fills every field.
 struct CPUID_INFO {
-  wchar_t raw_model[49]; // Brand string, e.g. "Intel(R) Core(TM) i7-..." (48 chars + null)
-  int vendor;            // See CPU_VENDOR
+  wchar_t raw_model[49];  // Brand string, e.g. "Intel(R) Core(TM) i7-..." (48 chars + null)
+  int vendor;             // See CPU_VENDOR
   unsigned int num_cores; // Logical cores
-  bool is_64_bit; // Whether CPU is capable of long mode
-  bool has_x87;   // On-chip x87 FPU. Available since i486DX/Pentium.
-  bool has_mmx;   // MultiMedia Extensions
-  bool has_3dnow; // Originally AMD-only
-  bool has_sse;   // Only single precision, Pentium III.
-  bool has_sse2;  // Most modern compilers baseline target
-  bool has_sse3;  // Chromium baseline, 98% of online systems support this.
-  bool has_ssse3; // Supplemental SSE3, not to be confused with regular SSE3
-  bool has_sse41; // Core 2 Duo "Wolfdale"
-  bool has_sse42; // End of x86 32 bit SIMD instructions
-  bool has_xsave; // Most AVX+ capable CPUs have this
-  bool has_aes;   // aka AES-NI
-  bool has_fma3;  // All Bulldozer and AVX2+ CPUs have this
-  bool has_fma4;  // Only Bulldozer has this
-  bool has_rdrand; // Most CPUs since Ivy Bridge have this
-  bool has_avx;    // Sandy Bridge/Bulldozer
-  bool has_avx2;   // Haswell/Ryzen, commonly used for acceleration
+  bool is_64_bit;   // Whether CPU is capable of long mode
+  bool has_x87;     // On-chip x87 FPU. Available since i486DX/Pentium.
+  bool has_mmx;     // MultiMedia Extensions
+  bool has_3dnow;   // Originally AMD-only
+  bool has_sse;     // Only single precision, Pentium III.
+  bool has_sse2;    // Most modern compilers baseline target
+  bool has_sse3;    // Chromium baseline, 98% of online systems support this.
+  bool has_ssse3;   // Supplemental SSE3, not to be confused with regular SSE3
+  bool has_sse41;   // Core 2 Duo "Wolfdale"
+  bool has_sse42;   // End of x86 32 bit SIMD instructions
+  bool has_xsave;   // Most AVX+ capable CPUs have this
+  bool has_aes;     // aka AES-NI
+  bool has_fma3;    // All Bulldozer and AVX2+ CPUs have this
+  bool has_fma4;    // Only Bulldozer has this
+  bool has_rdrand;  // Most CPUs since Ivy Bridge have this
+  bool has_avx;     // Sandy Bridge/Bulldozer
+  bool has_avx2;    // Haswell/Ryzen, commonly used for acceleration
   bool has_avx512f; // AVX-512 "foundation" - All AVX-512 CPUs have this
   bool has_vmx;     // Virtual Machine Extensions
 };
@@ -76,6 +76,20 @@ struct CPUID_INFO {
 // Fills *cpuinfo with detected CPU information. Returns true on success, false
 // if cpuinfo is null or the CPUID instruction is unavailable.
 OSINFO_API bool __cdecl GetCPUInfo(CPUID_INFO *cpuinfo);
+
+OSINFO_API unsigned int __cdecl NumCpuCores();
+
+OSINFO_API const wchar_t* __cdecl CpuVendor();
+
+OSINFO_API const wchar_t* __cdecl CpuModel();
+
+OSINFO_API bool __cdecl IsCPU64BitCapable();
+
+OSINFO_API bool __cdecl CanExecuteSSE();
+
+OSINFO_API bool __cdecl CanExecuteAVX();
+
+OSINFO_API bool __cdecl CanExecuteAVX512();
 
 #ifdef __cplusplus
 } // extern "C"

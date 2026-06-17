@@ -16,6 +16,8 @@ extern unsigned long WinVer;
 
 extern unsigned long long WinVerFull;
 
+inline constexpr wchar_t kOsInfoError[] = L"OSInfo Error";
+
 #ifndef OSINFO_STATIC_LIB
  extern HINSTANCE gHinstDLL;
 #endif // !OSINFO_STATIC_LIB
@@ -74,7 +76,7 @@ static std::wstring const __cdecl StringToWstring(const std::string& str);
 
 static std::string const __cdecl WstringToString(const std::wstring& wstr);
 
-inline void __cdecl NotReachedImpl(const std::string& func_name);
+void __cdecl NotReachedImpl(const std::string& func_name);
 
 #define __FUNC__ __func__
 

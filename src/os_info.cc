@@ -759,12 +759,18 @@ static inline void ImmediateDebugCrash() {
 #endif // __MINGW32__
 }
 
-// Dumb equivalent of Chromium's implementation
-inline void NotReachedImpl(const std::string& func_name) {
+__cdecl void NotReachedImpl(const std::string& func_name) {
   // Log function name and then crash the program
-  std::string func_string = func_name;
-  std::cerr << "NOTREACHED(): " << func_string << std::endl;
-  ImmediateDebugCrash();
+  const std::string func_string = func_name;
+  std::ostringstream failstream;
+  failstream << "NOTREACHED(): " << func_string;
+  const std::string fail_str = failstream.str();
+  const std::wstring error_msg = StringToWstring(fail_str);
+  std::wcerr << error_msg << std::endl;
+  if (MessageBoxW(nullptr, error_msg.c_str(), kOsInfoError,
+                     MB_OK | MB_ICONERROR) != 0) {
+    ImmediateDebugCrash();
+  }
 }
 
 OSINFO_API const std::wstring GetOsInfoVersionW() {

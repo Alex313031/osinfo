@@ -62,6 +62,27 @@ static uint32_t GetLeafCount(uint32_t base) {
 #endif
 }
 
+// XCR0 bits the OS must have enabled for AVX state to survive context switches:
+// bit 1 (SSE/XMM state) and bit 2 (AVX/YMM state).
+static constexpr uint64_t kXcr0AvxMask = 0x6u;
+
+// AVX-512 additionally needs bit 5 (opmask k0-k7), bit 6 (upper halves of
+// ZMM0-15) and bit 7 (ZMM16-31), on top of the AVX (XMM+YMM) bits.
+static constexpr uint64_t kXcr0Avx512Mask = 0xE6u;
+
+// Reads extended control register XCR0 via XGETBV. ONLY call this when CPUID
+// reports OSXSAVE (CPUID.1:ECX[27]); executing XGETBV otherwise faults (#UD).
+static uint64_t ReadXcr0() {
+#if defined(_MSC_VER)
+  return _xgetbv(0);
+#else
+  uint32_t eax = 0u, edx = 0u;
+  // XGETBV with ECX=0. Emitted as raw bytes so it assembles without -mxsave.
+  __asm__ volatile(".byte 0x0f, 0x01, 0xd0" : "=a"(eax), "=d"(edx) : "c"(0u));
+  return (static_cast<uint64_t>(edx) << 32) | eax;
+#endif
+}
+
 // Maps the 12-byte CPUID leaf-0 vendor string to a CPU_VENDOR.
 static int MapVendor(const char vendor[kVendorLeafSize]) {
   // Anything not listed here falls through to VENDOR_UNKNOWN.
@@ -135,7 +156,7 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
   if (max_basic == 0u) {
     // No CPUID (pre-Pentium) - nothing more we can read.
     info->vendor = VENDOR_UNKNOWN;
-    lstrcpynW(info->raw_model, L"Unknown", 49);
+    lstrcpynW(info->raw_model, kUnknownBrand, 49);
     return false;
   }
 
@@ -196,7 +217,7 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
     }
     FormatBrandString(info, brand);
   } else {
-    lstrcpynW(info->raw_model, L"Unknown", 49);
+    lstrcpynW(info->raw_model, kUnknownBrand, 49);
   }
 
   return true;
@@ -212,4 +233,103 @@ OSINFO_API bool __cdecl GetCPUInfo(CPUID_INFO* cpuinfo) {
   }
   *cpuinfo = g_CPUInfo;
   return true;
+}
+
+OSINFO_API unsigned int __cdecl NumCpuCores() {
+  return static_cast<unsigned int>(GetLogicalProcessorCount());
+}
+
+OSINFO_API const wchar_t* __cdecl CpuVendor() {
+  CPUID_INFO vendor_info {};
+  if (!GetCPUInfo(&vendor_info)) {
+    return L"Failed to get CPU Vendor.";
+  }
+  const int vendor_id = vendor_info.vendor;
+  switch (vendor_id) {
+    case VENDOR_INTEL:
+      return kIntelBrand;
+    case VENDOR_AMD:
+      return kAmdBrand;
+    case VENDOR_CYRIX:
+      return kCyrixBrand;
+    case VENDOR_VIA:
+      return kViaBrand;
+    case VENDOR_CENTAUR:
+      return kCentaurBrand;
+    case VENDOR_UNKNOWN:
+      return kUnknownBrand;
+    default:
+      return kUnknownBrand;
+  }
+}
+
+OSINFO_API const wchar_t* __cdecl CpuModel() {
+  if (!GetCPUInfo(&g_CPUInfo)) {
+    return L"Failed to get CPU Model.";
+  }
+  // raw_model lives in the static g_CPUInfo cache, so the pointer stays valid.
+  return g_CPUInfo.raw_model;
+}
+
+OSINFO_API bool __cdecl IsCPU64BitCapable() {
+  CPUID_INFO lm_info {};
+  if (!GetCPUInfo(&lm_info)) {
+    return false;
+  }
+  return lm_info.is_64_bit;
+}
+
+OSINFO_API bool __cdecl CanExecuteSSE() {
+  // SSE OS-enablement (CR4.OSFXSR) is not exposed via CPUID, so ask Windows.
+  // IsProcessorFeaturePresent reports CPU and OS support together. Resolve it
+  // dynamically: it is absent on NT 4.0, where SSE state is never OS-saved
+  // anyway, so a missing export correctly maps to "false".
+  typedef BOOL(WINAPI * FnIsProcessorFeaturePresent)(DWORD);
+  static FnIsProcessorFeaturePresent pfnIsProcessorFeaturePresent = nullptr;
+  static bool s_resolved                                          = false;
+  if (!s_resolved) {
+    HMODULE hKernel32              = GetModuleHandleW(kKernel32Dll);
+    pfnIsProcessorFeaturePresent = reinterpret_cast<FnIsProcessorFeaturePresent>(
+        hKernel32 ? GetProcAddress(hKernel32, "IsProcessorFeaturePresent") : nullptr);
+    s_resolved = true;
+  }
+  if (!pfnIsProcessorFeaturePresent) {
+    return false;
+  }
+  return pfnIsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE) != FALSE;
+}
+
+OSINFO_API bool __cdecl CanExecuteAVX() {
+  // The CPU must support CPUID leaf 1 to report AVX/OSXSAVE.
+  if (GetLeafCount(CPUID_STD_BASE) < 1u) {
+    return false;
+  }
+  uint32_t regs[4];
+  FillRegInfo(1u, 0u, regs);
+  const uint32_t ecx = regs[CPUID_ECX];
+  // OSXSAVE (bit 27) means the OS enabled XSAVE; AVX (bit 28) is CPU support.
+  // Both are required before XGETBV is even safe to execute.
+  if (!BitCheck(ecx, 27u) || !BitCheck(ecx, 28u)) {
+    return false;
+  }
+  // Finally confirm the OS is actually preserving XMM+YMM state.
+  return (ReadXcr0() & kXcr0AvxMask) == kXcr0AvxMask;
+}
+
+OSINFO_API bool __cdecl CanExecuteAVX512() {
+  // OSXSAVE is reported in leaf 1; the AVX512F CPU bit lives in leaf 7.
+  if (GetLeafCount(CPUID_STD_BASE) < 7u) {
+    return false;
+  }
+  uint32_t regs[4];
+  FillRegInfo(1u, 0u, regs);
+  if (!BitCheck(regs[CPUID_ECX], 27u)) {  // OSXSAVE: OS enabled XSAVE.
+    return false;
+  }
+  FillRegInfo(7u, 0u, regs);
+  if (!BitCheck(regs[CPUID_EBX], 16u)) {  // AVX512F: CPU support.
+    return false;
+  }
+  // OS must preserve opmask + ZMM state in addition to XMM/YMM.
+  return (ReadXcr0() & kXcr0Avx512Mask) == kXcr0Avx512Mask;
 }
