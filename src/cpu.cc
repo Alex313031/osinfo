@@ -13,6 +13,8 @@
  #include <cpuid.h>
 #endif
 
+#include <powrprof.h>
+
 CPUID_INFO g_CPUInfo{};
 
 // True once g_CPUInfo has been populated (success or not), so we only probe once.
@@ -87,9 +89,8 @@ static uint64_t __cdecl ReadXcr0() {
 static int __cdecl MapVendor(const char vendor[kVendorLeafSize]) {
   // Anything not listed here falls through to VENDOR_UNKNOWN.
   static const VendorMap kVendors[] = {
-      {"GenuineIntel", VENDOR_INTEL},   {"AuthenticAMD", VENDOR_AMD},
-      {"HygonGenuine", VENDOR_AMD},     {"CyrixInstead", VENDOR_CYRIX},
-      {"VIA VIA VIA ", VENDOR_VIA},     {"  Shanghai  ", VENDOR_VIA},
+      {"GenuineIntel", VENDOR_INTEL},   {"AuthenticAMD", VENDOR_AMD}, {"HygonGenuine", VENDOR_AMD},
+      {"CyrixInstead", VENDOR_CYRIX},   {"VIA VIA VIA ", VENDOR_VIA}, {"  Shanghai  ", VENDOR_VIA},
       {"CentaurHauls", VENDOR_CENTAUR},
   };
   for (const VendorMap& v : kVendors) {
@@ -120,6 +121,8 @@ static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[48]) {
   info->raw_model[i] = L'\0';
 }
 
+// Returns the OS-reported logical processor count (native count via
+// GetNativeSystemInfo on XP+, GetSystemInfo otherwise); always at least 1.
 DWORD __cdecl GetLogicalProcessorCount() {
   SYSTEM_INFO si = {};
 
@@ -195,8 +198,8 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
   if (max_basic >= 7u) {
     FillRegInfo(7u, 0u, regs);
     const uint32_t ebx = regs[CPUID_EBX];
-    info->has_avx2    = BitCheck(ebx, 5u);
-    info->has_avx512f = BitCheck(ebx, 16u);
+    info->has_avx2     = BitCheck(ebx, 5u);
+    info->has_avx512f  = BitCheck(ebx, 16u);
   }
 
   // Extended leaves.
@@ -240,7 +243,7 @@ OSINFO_API unsigned int __cdecl NumCpuCores() {
 }
 
 OSINFO_API const wchar_t* __cdecl CpuVendor() {
-  CPUID_INFO vendor_info {};
+  CPUID_INFO vendor_info{};
   if (!GetCPUInfo(&vendor_info)) {
     return L"Failed to get CPU Vendor.";
   }
@@ -272,7 +275,7 @@ OSINFO_API const wchar_t* __cdecl CpuModel() {
 }
 
 OSINFO_API bool __cdecl IsCPU64BitCapable() {
-  CPUID_INFO lm_info {};
+  CPUID_INFO lm_info{};
   if (!GetCPUInfo(&lm_info)) {
     return false;
   }
@@ -288,7 +291,7 @@ OSINFO_API bool __cdecl CanExecuteSSE() {
   static FnIsProcessorFeaturePresent pfnIsProcessorFeaturePresent = nullptr;
   static bool s_resolved                                          = false;
   if (!s_resolved) {
-    HMODULE hKernel32              = GetModuleHandleW(kKernel32Dll);
+    HMODULE hKernel32            = GetModuleHandleW(kKernel32Dll);
     pfnIsProcessorFeaturePresent = reinterpret_cast<FnIsProcessorFeaturePresent>(
         hKernel32 ? GetProcAddress(hKernel32, "IsProcessorFeaturePresent") : nullptr);
     s_resolved = true;
@@ -323,13 +326,65 @@ OSINFO_API bool __cdecl CanExecuteAVX512() {
   }
   uint32_t regs[4];
   FillRegInfo(1u, 0u, regs);
-  if (!BitCheck(regs[CPUID_ECX], 27u)) {  // OSXSAVE: OS enabled XSAVE.
+  if (!BitCheck(regs[CPUID_ECX], 27u)) { // OSXSAVE: OS enabled XSAVE.
     return false;
   }
   FillRegInfo(7u, 0u, regs);
-  if (!BitCheck(regs[CPUID_EBX], 16u)) {  // AVX512F: CPU support.
+  if (!BitCheck(regs[CPUID_EBX], 16u)) { // AVX512F: CPU support.
     return false;
   }
   // OS must preserve opmask + ZMM state in addition to XMM/YMM.
   return (ReadXcr0() & kXcr0Avx512Mask) == kXcr0Avx512Mask;
+}
+
+// Signature of powrprof!CallNtPowerInformation (Windows 2000+).
+typedef NTSTATUS(
+    WINAPI* FnCallNtPowerInformation)(POWER_INFORMATION_LEVEL, PVOID, ULONG, PVOID, ULONG);
+
+// Fills `out` with one PROCESSOR_POWER_INFORMATION per logical core. The
+// CallNtPowerInformation export is resolved dynamically rather than statically
+// imported, so osinfo.dll still loads on NT 4.0 (where powrprof.dll lacks it);
+// there this simply returns false and callers report 0.
+static bool __cdecl QueryProcessorPower(std::vector<PROCESSOR_POWER_INFORMATION>& out) {
+  using FnCallNtPowerInformation =
+      NTSTATUS(WINAPI*)(POWER_INFORMATION_LEVEL, PVOID, ULONG, PVOID, ULONG);
+  static FnCallNtPowerInformation pfnCallNtPowerInformation = nullptr;
+  static bool s_resolved                                    = false;
+  if (!s_resolved) {
+    // powrprof.dll is not always mapped, so LoadLibrary (not GetModuleHandle).
+    // The handle is intentionally left loaded for the cached pointer's lifetime.
+    HMODULE hPowrProf         = LoadLibraryW(kPowrProfDll);
+    pfnCallNtPowerInformation = reinterpret_cast<FnCallNtPowerInformation>(
+        hPowrProf ? GetProcAddress(hPowrProf, "CallNtPowerInformation") : nullptr);
+    s_resolved = true;
+  }
+  if (!pfnCallNtPowerInformation) {
+    return false;
+  }
+
+  out.resize(NumCpuCores());
+  const NTSTATUS status = pfnCallNtPowerInformation(
+      ProcessorInformation, nullptr, 0, &out[0],
+      static_cast<ULONG>(sizeof(PROCESSOR_POWER_INFORMATION) * out.size()));
+  return status == STATUS_SUCCESS;
+}
+
+OSINFO_API unsigned long __cdecl CpuFreqAvg() {
+  std::vector<PROCESSOR_POWER_INFORMATION> powerInfo;
+  if (!QueryProcessorPower(powerInfo)) {
+    return 0UL;
+  }
+  ULONG total = 0UL;
+  for (const PROCESSOR_POWER_INFORMATION& pi : powerInfo) {
+    total += pi.CurrentMhz;
+  }
+  return total / static_cast<ULONG>(powerInfo.size());
+}
+
+OSINFO_API unsigned long __cdecl CpuFreqMax() {
+  std::vector<PROCESSOR_POWER_INFORMATION> powerInfo;
+  if (!QueryProcessorPower(powerInfo)) {
+    return 0UL;
+  }
+  return powerInfo[0].MaxMhz;
 }

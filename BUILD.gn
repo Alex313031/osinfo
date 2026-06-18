@@ -58,6 +58,9 @@ static_library("osinfo_static") {
 config("osinfo_private_config") {
   include_dirs = [ "./src", ]
   cflags = [ "-Wunused-function" ]
+  libs = [
+    "kernel32",
+  ]
 }
 
 # Public shared lib config for outside consumers of the .dll

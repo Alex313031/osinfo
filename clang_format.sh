@@ -16,7 +16,7 @@ export HERE=$(cd "$(dirname "$0")" && pwd) &&
 # Format file with rules
 export CLANG_FORMAT_FILE=${HERE}/.clang-format &&
 
-printf "${GRE} Clang formatting using ${CLANG_FORMAT_FILE} ${c0}\n" &&
+printf "${GRE} Clang formatting ./ using ${CLANG_FORMAT_FILE} ${c0}\n" &&
 
 printf "${CYA} clang-format src/ ${c0}\n" &&
 clang-format --verbose -i --style=file:${CLANG_FORMAT_FILE} ${HERE}/src/{*.h,*.cc} &&

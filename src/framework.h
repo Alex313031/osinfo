@@ -29,6 +29,7 @@
 #include <sstream>   // std::ostringstream std::wostringstream
 #include <stdexcept> // exception handline
 #include <string>    // std::string std::wstring
+#include <vector>    // vector storage
 
 /* Defines handling */
 
@@ -42,7 +43,7 @@
   #define constexpr const
  #endif // constexpr
  #define inline
-#endif // __cplusplus < 201103L
+#endif  // __cplusplus < 201103L
 
 // Alias
 #ifndef __FUNC__
@@ -67,11 +68,11 @@ inline constexpr bool is_debug =
 // Universal pre-processer check for x86_64 arch is nonexistant. Make our own.
 inline constexpr bool is_x64 =
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
-  true;
-  #define IS_X64
+    true;
+ #define IS_X64
 #else
-  #define IS_X86
-  false;
+ #define IS_X86
+    false;
 #endif // defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
 
 // Sanity check of above
