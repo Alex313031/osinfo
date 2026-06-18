@@ -53,7 +53,7 @@
 // Adhere to semver > semver.org
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 7
-#define BUILD_VERSION 4
+#define BUILD_VERSION 5
 
 // Macro to convert to string
 #if !defined(_STRINGIZER_)
@@ -85,5 +85,9 @@
  #define LEGAL_COPYRIGHT L"\251 2026 Alex313031" // \251 is the © symbol
 #endif // OSINFO_VERSION_STRING
 // clang-format on
+
+#ifndef VS_FF_RELEASE
+ #define VS_FF_RELEASE 0x00000000L
+#endif
 
 #endif // OSINFO_DLL_VERSION_H_

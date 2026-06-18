@@ -1,14 +1,16 @@
 #ifndef OSINFO_LIBOSINFO_H_
 #define OSINFO_LIBOSINFO_H_
 
+// Master OSInfo library include file, this should be the only file consumers #include.
+
 #include "cpuinfo.h"
 
 #ifndef OSINFO_STATIC_LIB
  #include <shlwapi.h>
 #endif // OSINFO_STATIC_LIB
 
-// The DLL_IMPORT/DLL_EXPORT/OSINFO_API export macros are defined in cpuinfo.h,
-// which is included above.
+// The DLL_IMPORT/DLL_EXPORT/OSINFO_API export macros are defined in lib_export.h which is included
+// transitively via cpuinfo.h above. Consumers should not include either header directly.
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +29,7 @@ OSINFO_API std::string const __cdecl GetOSNameA();
 // Wide version of the above, recommended to use this version
 OSINFO_API std::wstring const __cdecl GetOSNameW();
 
-// Returns a string containing the human readable funn NT build number.
+// Returns a string containing the human readable full NT build number.
 // For example, for Windows XP SP3, it would return "5.1.2600".
 OSINFO_API std::string const __cdecl GetWinVersionA();
 

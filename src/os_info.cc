@@ -6,8 +6,6 @@
 
 #include "cpu.h"
 
-static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
-
 unsigned long WinVer          = 0UL;
 unsigned long long WinVerFull = 0ULL;
 
@@ -25,21 +23,17 @@ bool is_win81 = false;
 bool is_win10 = false;
 bool is_win11 = false;
 
-static bool is_initialized = false;
-
-#ifndef OSINFO_STATIC_LIB
-HINSTANCE gHinstDLL = nullptr;
-
-static bool was_static_load = false;
-
+// Spoofable (honor the per-EXE Application Compatibility tab on XP+). Defined for
+// both build modes - os_info.h declares these extern unconditionally and they are
+// used by code present in both the .dll and the static lib.
 ULONG NT_MAJOR = 0UL;
 ULONG NT_MINOR = 0UL;
 ULONG NT_BUILD = 0UL;
-wchar_t NT_CSD_VERSION[128]{};
+wchar_t NT_CSD_VERSION[kCsdVersionLen]{};
 USHORT NT_SP_MAJOR = 0u;
 USHORT NT_SP_MINOR = 0u;
 USHORT NT_SUITE    = 0u;
-UCHAR NT_TYPE;
+UCHAR NT_TYPE      = 0u;
 // Non-Spoofable
 ULONG REAL_NT_MAJOR = 0UL;
 ULONG REAL_NT_MINOR = 0UL;
@@ -48,6 +42,15 @@ ULONG REAL_NT_BUILD = 0UL;
 std::string NT_SERVICE_PACK    = "";
 std::string NT_FEATURE_VERSION = "";
 std::string NT_POST_STRING     = "";
+
+// Statics (file-local state)
+static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
+static bool is_initialized               = false;
+
+#ifndef OSINFO_STATIC_LIB
+HINSTANCE gHinstDLL = nullptr;
+
+static bool was_static_load = false;
 
 // Main entry point when loading/unloading .DLL from address space of another process/thread.
 // MUST have exact function signature BOOL WINAPI. DLL equivalent of WinMain.
@@ -139,28 +142,24 @@ static bool __cdecl DeInitOsInfoDLL() {
 #endif // !OSINFO_STATIC_LIB
 
 static bool __cdecl EnsureInitialized() {
-  // Static lib has no DllMain, so initialize lazily on first use. In the .dll
-  // DllMain already set is_initialized via InitOsInfoDll().
-  if (!is_initialized) {
+  // Initialize exactly once. The magic-static guard is thread-safe, so the static
+  // lib's lazy first-use init cannot race; in the .dll, DllMain has normally run
+  // InitOsInfoDll() already (under the loader lock).
+  static const bool ok = [] {
 #ifndef OSINFO_STATIC_LIB
-    MessageBoxW(nullptr, L"Should already be initialized.", kOsInfoError, MB_OK | MB_ICONWARNING);
+    if (!is_initialized) {
+      OutputDebugStringW(L"OSInfo: EnsureInitialized() ran before DllMain init; initializing now.\n");
+    }
 #endif // !OSINFO_STATIC_LIB
-    is_initialized = GetWinNTVersion() && GetRealWinNTVersion();
-  }
-  if (!is_initialized) {
-    MessageBoxW(nullptr, L"Failed to set Windows version bools!", kOsInfoError, MB_OK | MB_ICONERROR);
-  }
-  return is_initialized;
-}
-
-// Combines a major and minor number into one float, e.g. (6, 1) -> 6.1f.
-[[maybe_unused]] static float __cdecl concatToFloat(int major, int minor) {
-  // Count digits of the fractional part
-  int digits = (minor == 0) ? 1 : std::to_string(minor).size();
-
-  // Build the float: whole + fractional / (10^digits)
-  const float retval = static_cast<float>(major + minor / std::pow(10.0f, digits));
-  return retval;
+    if (!is_initialized) {
+      is_initialized = GetWinNTVersion() && GetRealWinNTVersion();
+    }
+    if (!is_initialized) {
+      OutputDebugStringW(L"OSInfo: Failed to set Windows version bools!\n");
+    }
+    return is_initialized;
+  }();
+  return ok;
 }
 
 // Packs two version parts into one value: (high << 8) | (low & 0xFF), e.g. (6, 1) -> 0x601.
@@ -168,58 +167,77 @@ unsigned long __cdecl combineToHex(unsigned long high, unsigned long low) {
   return (high << 8) | (low & 0xFF);
 }
 
-// Gets the real, unspoofable NT version number, for GetRealNTVer and internal comparison.
+// Packs major/minor/build into the full NT version layout the public getters
+// return: 0xMMmmBBBB (major<<24 | minor<<16 | low 16 bits of build).
+static unsigned long long __cdecl PackNtVerFull(ULONG major, ULONG minor, ULONG build) {
+  return (static_cast<unsigned long long>(major) << 24) |
+         (static_cast<unsigned long long>(minor) << 16) |
+         (static_cast<unsigned long long>(build) & 0xFFFFULL);
+}
+
+// Writes the three optional out-params when non-null. Shared by the fallback
+// chain in GetRealVersions below so each tier doesn't repeat the null checks.
+static void __cdecl WriteVersionOut(ULONG* major, ULONG* minor, ULONG* build, ULONG m, ULONG mi,
+                                    ULONG b) {
+  if (major != nullptr) {
+    *major = m;
+  }
+  if (minor != nullptr) {
+    *minor = mi;
+  }
+  if (build != nullptr) {
+    *build = b;
+  }
+}
+
+// Gets the real, unspoofable NT version number, for GetRealNTVer and internal
+// comparison. Tries, in order, until one succeeds:
+//   1. RtlGetNtVersionNumbers (XP+, undocumented) - ignores all compat shims.
+//   2. RtlGetVersion (Win2000+, NT-native) - also unshimmed, returns the truth.
+//   3. GetVersionExW (NT 4.0+) - last resort, only reached when the ntdll
+//      functions are absent (i.e. NT 4.0), where no version shims exist anyway.
 static bool __cdecl GetRealVersions(ULONG* major, ULONG* minor, ULONG* build) {
   static HMODULE hNtDll = GetModuleHandleW(kNtDllDll);
-  if (hNtDll == nullptr) {
-    return false;
-  }
 
-  // Primary: RtlGetNtVersionNumbers (XP+, undocumented). Packs a build-type
-  // flag into the top 4 bits of buildVer - mask them off so callers see the
-  // plain build number (e.g. 2600 for XP SP3, 19045 for Win10 22H2).
-  using RtlGetNtVersionNumbers_t = void(WINAPI*)(DWORD*, DWORD*, DWORD*);
-  static RtlGetNtVersionNumbers_t pfnRtlGetNtVersionNumbers =
-      reinterpret_cast<RtlGetNtVersionNumbers_t>(GetProcAddress(hNtDll, "RtlGetNtVersionNumbers"));
-  if (pfnRtlGetNtVersionNumbers != nullptr) {
-    DWORD majorVer = 0, minorVer = 0, buildVer = 0;
-    pfnRtlGetNtVersionNumbers(&majorVer, &minorVer, &buildVer);
-    if (majorVer != 0) {
-      if (major != nullptr) {
-        *major = static_cast<ULONG>(majorVer);
-      }
-      if (minor != nullptr) {
-        *minor = static_cast<ULONG>(minorVer);
-      }
-      if (build != nullptr) {
-        *build = static_cast<ULONG>(buildVer & 0x0FFFFFFFu);
-      }
-      return true;
-    }
-  } else {
-    // Fallback: RtlGetVersion (Win2K+, documented NT-native, not shimmed by
-    // application-compatibility manifests unlike GetVersionExW on Win8.1+).
-    using RtlGetVersion_t = LONG(WINAPI*)(OSVERSIONINFOW*);
-    static RtlGetVersion_t pfnRtlGetVersion =
-        reinterpret_cast<RtlGetVersion_t>(GetProcAddress(hNtDll, "RtlGetVersion"));
-    if (pfnRtlGetVersion == nullptr) {
-      return false;
-    } else {
-      OSVERSIONINFOW vi      = {};
-      vi.dwOSVersionInfoSize = sizeof(vi);
-      if (pfnRtlGetVersion(&vi) == 0 && vi.dwMajorVersion != 0) {
-        if (major != nullptr) {
-          *major = static_cast<ULONG>(vi.dwMajorVersion);
-        }
-        if (minor != nullptr) {
-          *minor = static_cast<ULONG>(vi.dwMinorVersion);
-        }
-        if (build != nullptr) {
-          *build = static_cast<ULONG>(vi.dwBuildNumber);
-        }
+  if (hNtDll != nullptr) {
+    // 1. RtlGetNtVersionNumbers packs a build-type flag into the top 4 bits of
+    //    buildVer - mask them off so callers see the plain build number (e.g.
+    //    2600 for XP SP3, 19045 for Win10 22H2).
+    using RtlGetNtVersionNumbers_t = void(WINAPI*)(DWORD*, DWORD*, DWORD*);
+    static RtlGetNtVersionNumbers_t pfnRtlGetNtVersionNumbers =
+        reinterpret_cast<RtlGetNtVersionNumbers_t>(GetProcAddress(hNtDll, "RtlGetNtVersionNumbers"));
+    if (pfnRtlGetNtVersionNumbers != nullptr) {
+      DWORD majorVer = 0, minorVer = 0, buildVer = 0;
+      pfnRtlGetNtVersionNumbers(&majorVer, &minorVer, &buildVer);
+      if (majorVer != 0) {
+        WriteVersionOut(major, minor, build, majorVer, minorVer, buildVer & 0x0FFFFFFFu);
         return true;
       }
     }
+
+    // 2. RtlGetVersion (Win2K+, documented NT-native, not shimmed by
+    //    application-compatibility manifests unlike GetVersionExW on Win8.1+).
+    using RtlGetVersion_t = LONG(WINAPI*)(OSVERSIONINFOW*);
+    static RtlGetVersion_t pfnRtlGetVersion =
+        reinterpret_cast<RtlGetVersion_t>(GetProcAddress(hNtDll, "RtlGetVersion"));
+    if (pfnRtlGetVersion != nullptr) {
+      OSVERSIONINFOW vi      = {};
+      vi.dwOSVersionInfoSize = sizeof(vi);
+      if (pfnRtlGetVersion(&vi) == STATUS_SUCCESS && vi.dwMajorVersion != 0) {
+        WriteVersionOut(major, minor, build, vi.dwMajorVersion, vi.dwMinorVersion, vi.dwBuildNumber);
+        return true;
+      }
+    }
+  }
+
+  // 3. Last resort for NT 4.0 (no RtlGetVersion/RtlGetNtVersionNumbers). Subject
+  //    to app-compat shims on Win8.1+, but this branch is only reached when those
+  //    ntdll functions are missing, where the shim infrastructure doesn't exist.
+  OSVERSIONINFOW vi      = {};
+  vi.dwOSVersionInfoSize = sizeof(vi);
+  if (GetVersionExW(&vi) != 0 && vi.dwMajorVersion != 0) {
+    WriteVersionOut(major, minor, build, vi.dwMajorVersion, vi.dwMinorVersion, vi.dwBuildNumber);
+    return true;
   }
 
   return false;
@@ -235,9 +253,7 @@ static bool __cdecl GetRealWinNTVersion() {
     REAL_NT_MINOR = minor;
     REAL_NT_BUILD = build;
     RealWinVer     = combineToHex(REAL_NT_MAJOR, REAL_NT_MINOR);
-    RealWinVerFull = (static_cast<unsigned long long>(REAL_NT_MAJOR) << 24) |
-                    (static_cast<unsigned long long>(REAL_NT_MINOR) << 16) |
-                    (static_cast<unsigned long long>(REAL_NT_BUILD) & 0xFFFFULL);
+    RealWinVerFull = PackNtVerFull(REAL_NT_MAJOR, REAL_NT_MINOR, REAL_NT_BUILD);
     if (RealWinVer > 0UL) {
       switch (RealWinVer) {
         case NTVER_40:
@@ -265,14 +281,17 @@ static bool __cdecl GetRealWinNTVersion() {
           is_win81 = true;
           break;
         case NTVER_10: {
-          if (NT_BUILD > 20348) {
+          // Win11 RTM is build 22000; below that, NTVER_10 is genuine Windows 10.
+          // Use the unspoofable REAL_NT_BUILD here, not the shimmable NT_BUILD.
+          if (REAL_NT_BUILD >= 22000) {
             is_win11 = true;
           } else {
             is_win10 = true;
           }
         } break;
         default:
-          NOTREACHED();
+          // Unknown but valid (e.g. a future Windows) - don't classify, and do
+          // NOT crash the host process; just report no specific version matched.
           return false;
       }
       success = true;
@@ -286,29 +305,43 @@ static bool __cdecl GetWinNTVersion() {
   // Use RtlGetVersion from winnt.h, not wdm.h
   NTSTATUS(WINAPI * RtlGetVersion)(LPOSVERSIONINFOEXW);
   // https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-osversioninfoexw
-  OSVERSIONINFOEXW osInfo;
+  OSVERSIONINFOEXW osInfo = {};
 
   // Make sure we get the dll
   HMODULE NtDllModule = GetModuleHandleW(kNtDllDll);
 
   // Get and run ntdll.dll function pointer to RtlGetVersion()
-  if (NtDllModule && NtDllModule != nullptr) {
+  if (NtDllModule != nullptr) {
     FARPROC proc = GetProcAddress(NtDllModule, "RtlGetVersion");
     memcpy(&RtlGetVersion, &proc, sizeof(proc));
   } else {
     RtlGetVersion = nullptr;
   }
 
-  // Should never be null
-  if (RtlGetVersion != nullptr) {
+  osInfo.dwOSVersionInfoSize = sizeof osInfo;
+
+  // Primary: RtlGetVersion (Win2000+). On XP+ it honors the per-EXE Application
+  // Compatibility tab - exactly the "reported"/spoofable value we want here (the
+  // Real path bypasses it). On NT 4.0 RtlGetVersion doesn't exist, so fall back
+  // to GetVersionExW; NT4 has no compat version shimming, so it's the truth there.
+  bool got = (RtlGetVersion != nullptr && RtlGetVersion(&osInfo) == STATUS_SUCCESS &&
+              osInfo.dwMajorVersion != 0);
+  if (!got) {
+    osInfo                     = {};
     osInfo.dwOSVersionInfoSize = sizeof osInfo;
-    RtlGetVersion(&osInfo);
+    got = (GetVersionExW(reinterpret_cast<LPOSVERSIONINFOW>(&osInfo)) != 0 &&
+           osInfo.dwMajorVersion != 0);
+  }
+
+  // Only trust osInfo if one of the calls above succeeded; otherwise the fields
+  // are garbage.
+  if (got) {
     NT_MAJOR = osInfo.dwMajorVersion;
     NT_MINOR = osInfo.dwMinorVersion;
     NT_BUILD = osInfo.dwBuildNumber;
 #if _WIN32_WINNT <= 0x0500 || defined(__MINGW32__)
     // Windows 2000 and MinGW compatible string copy function
-    lstrcpynW(NT_CSD_VERSION, osInfo.szCSDVersion, 128);
+    lstrcpynW(NT_CSD_VERSION, osInfo.szCSDVersion, kCsdVersionLen);
 #else
     // Safer Windows XP+ MSVS version
     wcscpy_s(NT_CSD_VERSION, osInfo.szCSDVersion);
@@ -323,15 +356,13 @@ static bool __cdecl GetWinNTVersion() {
   }
 
   if (!success) {
-    MessageBoxW(nullptr, L"Failed to get Windows version!", kOsInfoError, MB_OK | MB_ICONERROR);
+    OutputDebugStringW(L"OSInfo: Failed to get Windows version!\n");
   } else {
     // Set our extern WinVer. Compute WinVerFull inline rather than calling
     // GetReportedNTVer(), which routes through EnsureInitialized() and would recurse
     // back into GetWinNTVersion() before is_initialized has been set.
     WinVer     = combineToHex(NT_MAJOR, NT_MINOR);
-    WinVerFull = (static_cast<unsigned long long>(NT_MAJOR) << 24) |
-                 (static_cast<unsigned long long>(NT_MINOR) << 16) |
-                 (static_cast<unsigned long long>(NT_BUILD) & 0xFFFFULL);
+    WinVerFull = PackNtVerFull(NT_MAJOR, NT_MINOR, NT_BUILD);
   }
 
   return success;
@@ -341,15 +372,13 @@ static bool __cdecl GetWinNTVersion() {
 static std::string const __cdecl GetNTString() {
   // NT version number
   std::string NtVer;
-  std::ostringstream debugStream;
-
   if (!EnsureInitialized()) {
     return std::string();
   }
 
   // Make sure that the values returned make sense.
   // NT Kernels with numbers outside this range don't exist
-  if (NT_MAJOR >= 3 && NT_MAJOR <= 11) {
+  if (REAL_NT_MAJOR >= 3 && REAL_NT_MAJOR <= 11) {
     // Define NtVer as human readable string literal separated by decimals
     NtVer =
         std::to_string(REAL_NT_MAJOR) + "." + std::to_string(REAL_NT_MINOR) + "." + std::to_string(REAL_NT_BUILD);
@@ -766,9 +795,7 @@ OSINFO_API unsigned long long const __cdecl GetReportedNTVer() {
   if (!EnsureInitialized()) {
     return 0ULL;
   }
-  const unsigned long long retval = (static_cast<unsigned long long>(NT_MAJOR) << 24) |
-                                    (static_cast<unsigned long long>(NT_MINOR) << 16) |
-                                    (static_cast<unsigned long long>(NT_BUILD) & 0xFFFFULL);
+  const unsigned long long retval = PackNtVerFull(NT_MAJOR, NT_MINOR, NT_BUILD);
   return retval;
 }
 
@@ -776,9 +803,7 @@ OSINFO_API unsigned long long const __cdecl GetRealNTVer() {
   if (!EnsureInitialized()) {
     return 0ULL;
   }
-  const unsigned long long retval = (static_cast<unsigned long long>(REAL_NT_MAJOR) << 24) |
-                                    (static_cast<unsigned long long>(REAL_NT_MINOR) << 16) |
-                                    (static_cast<unsigned long long>(REAL_NT_BUILD) & 0xFFFFULL);
+  const unsigned long long retval = PackNtVerFull(REAL_NT_MAJOR, REAL_NT_MINOR, REAL_NT_BUILD);
   return retval;
 }
 
@@ -786,8 +811,7 @@ OSINFO_API unsigned long const __cdecl GetReportedShortNTVer() {
   if (!EnsureInitialized()) {
     return 0UL;
   }
-  const unsigned long retval = (static_cast<unsigned long>(NT_MAJOR) << 8) |
-                               (static_cast<unsigned long>(NT_MINOR));
+  const unsigned long retval = combineToHex(NT_MAJOR, NT_MINOR);
   return retval;
 }
 
@@ -795,8 +819,7 @@ OSINFO_API unsigned long const __cdecl GetRealShortNTVer() {
   if (!EnsureInitialized()) {
     return 0UL;
   }
-  const unsigned long retval = (static_cast<unsigned long>(REAL_NT_MAJOR) << 8) |
-                               (static_cast<unsigned long>(REAL_NT_MINOR));
+  const unsigned long retval = combineToHex(REAL_NT_MAJOR, REAL_NT_MINOR);
   return retval;
 }
 
@@ -813,6 +836,9 @@ OSINFO_API std::string const __cdecl GetServicePackA() {
 }
 
 OSINFO_API std::wstring const __cdecl GetServicePackW() {
+  if (!EnsureInitialized()) {
+    return std::wstring();
+  }
   // Get the service pack
   const bool fallback = REAL_NT_MAJOR < 6;
   std::wstring service_pack;
@@ -830,7 +856,9 @@ OSINFO_API std::wstring const __cdecl GetServicePackW() {
   return service_pack;
 }
 
-// Converts a UTF-8 std::string to a UTF-16 std::wstring. Throws on conversion failure.
+// Converts a UTF-8 std::string to a UTF-16 std::wstring. Returns empty on
+// conversion failure (never throws - this is reached from exported functions and
+// an exception must not cross the DLL boundary).
 static std::wstring const __cdecl StringToWstring(const std::string& str) {
   if (str.empty()) {
     return std::wstring();
@@ -838,7 +866,7 @@ static std::wstring const __cdecl StringToWstring(const std::string& str) {
   // Get length of string
   int wide_len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
   if (wide_len == 0) {
-    throw std::runtime_error("MultiByteToWideChar failed!");
+    return std::wstring();
   }
 
   // Convert it!
@@ -852,7 +880,9 @@ static std::wstring const __cdecl StringToWstring(const std::string& str) {
   return result;
 }
 
-// Converts a UTF-16 std::wstring to a UTF-8 std::string. Throws on conversion failure.
+// Converts a UTF-16 std::wstring to a UTF-8 std::string. Returns empty on
+// conversion failure (never throws - reached from exported functions, so an
+// exception must not cross the DLL boundary).
 static std::string const __cdecl WstringToString(const std::wstring& wstr) {
   if (wstr.empty()) {
     return std::string();
@@ -860,7 +890,7 @@ static std::string const __cdecl WstringToString(const std::wstring& wstr) {
   int utf8_len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
 
   if (utf8_len == 0) {
-    throw std::runtime_error("WideCharToMultiByte failed!");
+    return std::string();
   }
 
   // Convert
@@ -897,6 +927,7 @@ void __cdecl NotReachedImpl(const std::string& func_name) {
   const std::string fail_str   = failstream.str();
   const std::wstring error_msg = StringToWstring(fail_str);
   std::wcerr << error_msg << std::endl;
+  OutputDebugStringW(error_msg.c_str());
   if (MessageBoxW(nullptr, error_msg.c_str(), kOsInfoError, MB_OK | MB_ICONERROR) != 0) {
     ImmediateDebugCrash();
   }
@@ -993,7 +1024,7 @@ OSINFO_API const bool __cdecl IsWoW64() {
   } else {
     pIsWow64Process =
         reinterpret_cast<IS_WOW64_PROCESS_>(GetProcAddress(hKernel32, "IsWow64Process"));
-    if (!pIsWow64Process || pIsWow64Process == nullptr) {
+    if (pIsWow64Process == nullptr) {
       return false;
     } else {
       if (!pIsWow64Process(GetCurrentProcess(), &isWoW64)) {

@@ -20,6 +20,7 @@ shared_library("osinfo_dll") {
   precompiled_source = "src/pch.pch"
   sources = [
     "public/cpuinfo.h",
+    "public/lib_export.h",
     "public/libosinfo.h",
     "src/cpu.cc",
     "src/cpu.h",
@@ -42,6 +43,7 @@ static_library("osinfo_static") {
   precompiled_source = "src/pch.pch"
   sources = [
     "public/cpuinfo.h",
+    "public/lib_export.h",
     "public/libosinfo.h",
     "src/cpu.cc",
     "src/cpu.h",

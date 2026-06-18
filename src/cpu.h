@@ -9,8 +9,7 @@ inline constexpr wchar_t kKernel32Dll[] = L"kernel32.dll";
 inline constexpr wchar_t kNtDllDll[]    = L"ntdll.dll";    // Same for ntdll.dll
 inline constexpr wchar_t kPowrProfDll[] = L"powrprof.dll"; // Loaded on demand (not always mapped)
 
-// Vendor string leaf is 12 bytes on all x86 CPUs
-inline constexpr size_t kVendorLeafSize = 12u;
+inline constexpr size_t kModelStrSize = 48u;
 
 // Human readable manufacturer string constants
 inline constexpr wchar_t kIntelBrand[]   = L"Intel";
@@ -40,16 +39,10 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
 #define CPUID_STD_BASE     0x00000000 // Standard leaves base.
 #define CPUID_EXT_BASE     0x80000000 // Extended leaves base.
 #define CPUID_BRAND_1ST    0x80000002 // First brand string leaf.
-#define CPUID_CENTAUR_BASE 0xC0000000 // Centaur leaves base.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// Cached result, populated on the first successful GetCPUInfo() call.
-extern CPUID_INFO g_CPUInfo;
-
-extern bool g_cpu_detected;
 
 DWORD __cdecl GetLogicalProcessorCount();
 

@@ -15,11 +15,28 @@
 
 #include <powrprof.h>
 
-CPUID_INFO g_CPUInfo{};
+// Vendor string leaf is 12 bytes on all x86 CPUs
+static constexpr size_t kVendorLeafSize = 12u;
 
-// True once g_CPUInfo has been populated (success or not), so we only probe once.
-bool g_cpu_detected = false;
+// Keep the public raw_model buffer in sync with the brand-string length: it must
+// hold kModelStrSize ASCII chars plus a null terminator.
+static_assert(sizeof(CPUID_INFO::raw_model) / sizeof(wchar_t) == kModelStrSize + 1,
+              "CPUID_INFO::raw_model size is out of sync with kModelStrSize");
 
+// XCR0 bits the OS must have enabled for AVX state to survive context switches:
+// bit 1 (SSE/XMM state) and bit 2 (AVX/YMM state).
+static constexpr uint64_t kXcr0AvxMask = 0x6u;
+
+// AVX-512 additionally needs bit 5 (opmask k0-k7), bit 6 (upper halves of
+// ZMM0-15) and bit 7 (ZMM16-31), on top of the AVX (XMM+YMM) bits.
+static constexpr uint64_t kXcr0Avx512Mask = 0xE6u;
+
+// CPUID feature-bit positions used by the OS-execution checks below.
+static constexpr unsigned int kEcxOsxsaveBit = 27u; // CPUID.1:ECX[27] - OS enabled XSAVE
+static constexpr unsigned int kEcxAvxBit     = 28u; // CPUID.1:ECX[28] - AVX CPU support
+static constexpr unsigned int kEbxAvx512fBit = 16u; // CPUID.7:EBX[16] - AVX-512 Foundation
+
+// For mapping reported vendor strings to CPU_VENDOR id
 struct VendorMap {
   const char* id;
   int vendor;
@@ -28,6 +45,17 @@ struct VendorMap {
 // Returns bit n of v as a bool.
 static inline bool __cdecl BitCheck(uint32_t v, unsigned int n) {
   return ((v >> n) & 1u) != 0u;
+}
+
+// One-time CPU detection, cached for the process lifetime. The magic-static init
+// is thread-safe, so concurrent first calls cannot race or double-detect.
+static const CPUID_INFO& DetectedCpu() {
+  static const CPUID_INFO info = [] {
+    CPUID_INFO i{};
+    DetectCpu(&i);
+    return i;
+  }();
+  return info;
 }
 
 // Fills regs[4] = {EAX, EBX, ECX, EDX} for the given CPUID leaf/subleaf.
@@ -64,14 +92,6 @@ static uint32_t __cdecl GetLeafCount(uint32_t base) {
 #endif
 }
 
-// XCR0 bits the OS must have enabled for AVX state to survive context switches:
-// bit 1 (SSE/XMM state) and bit 2 (AVX/YMM state).
-static constexpr uint64_t kXcr0AvxMask = 0x6u;
-
-// AVX-512 additionally needs bit 5 (opmask k0-k7), bit 6 (upper halves of
-// ZMM0-15) and bit 7 (ZMM16-31), on top of the AVX (XMM+YMM) bits.
-static constexpr uint64_t kXcr0Avx512Mask = 0xE6u;
-
 // Reads extended control register XCR0 via XGETBV. ONLY call this when CPUID
 // reports OSXSAVE (CPUID.1:ECX[27]); executing XGETBV otherwise faults (#UD).
 static uint64_t __cdecl ReadXcr0() {
@@ -103,11 +123,11 @@ static int __cdecl MapVendor(const char vendor[kVendorLeafSize]) {
 
 // Copies the (ASCII) CPU brand string into the wide raw_model field, trimming
 // the leading padding spaces that brand strings commonly carry.
-static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[48]) {
+static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[kModelStrSize]) {
   // Bounded, null-terminated source copy first.
-  char ascii[49];
-  memcpy(ascii, brand, 48);
-  ascii[48] = '\0';
+  char ascii[kModelStrSize + 1];
+  memcpy(ascii, brand, kModelStrSize);
+  ascii[kModelStrSize] = '\0';
 
   const char* start = ascii;
   while (*start == ' ') {
@@ -115,7 +135,7 @@ static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[48]) {
   }
 
   size_t i = 0u;
-  for (; start[i] != '\0' && i < 48; ++i) {
+  for (; start[i] != '\0' && i < kModelStrSize; ++i) {
     info->raw_model[i] = static_cast<wchar_t>(static_cast<unsigned char>(start[i]));
   }
   info->raw_model[i] = L'\0';
@@ -124,26 +144,22 @@ static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[48]) {
 // Returns the OS-reported logical processor count (native count via
 // GetNativeSystemInfo on XP+, GetSystemInfo otherwise); always at least 1.
 DWORD __cdecl GetLogicalProcessorCount() {
-  SYSTEM_INFO si = {};
-
-  // GetNativeSystemInfo is XP+ only. Resolve it dynamically and use
-  // older GetSystemInfo on NT 4.0/2000.
-  typedef void(WINAPI * FnGetNativeSystemInfo)(LPSYSTEM_INFO);
-  static FnGetNativeSystemInfo pfnGetNativeSystemInfo = nullptr;
-  static bool s_resolved                              = false;
-  if (!s_resolved) {
-    HMODULE hKernel32      = GetModuleHandleW(kKernel32Dll);
-    pfnGetNativeSystemInfo = reinterpret_cast<FnGetNativeSystemInfo>(
-        hKernel32 ? GetProcAddress(hKernel32, "GetNativeSystemInfo") : nullptr);
-    s_resolved = true;
-  }
-
-  if (pfnGetNativeSystemInfo) {
-    pfnGetNativeSystemInfo(&si);
-  } else {
-    GetSystemInfo(&si);
-  }
-  return (si.dwNumberOfProcessors > 0) ? si.dwNumberOfProcessors : 1;
+  // The logical processor count is fixed for the process, so query it once
+  // (thread-safe). GetNativeSystemInfo is XP+ only; fall back to GetSystemInfo on
+  // NT 4.0/2000.
+  static const DWORD count = []() -> DWORD {
+    typedef void(WINAPI* FnGetNativeSystemInfo)(LPSYSTEM_INFO);
+    const FnGetNativeSystemInfo pfn = reinterpret_cast<FnGetNativeSystemInfo>(
+        GetProcAddress(GetModuleHandleW(kKernel32Dll), "GetNativeSystemInfo"));
+    SYSTEM_INFO si = {};
+    if (pfn) {
+      pfn(&si);
+    } else {
+      GetSystemInfo(&si);
+    }
+    return (si.dwNumberOfProcessors > 0) ? si.dwNumberOfProcessors : 1;
+  }();
+  return count;
 }
 
 // Probes the CPU and fills *info. Returns false if CPUID is unavailable (in
@@ -159,7 +175,7 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
   if (max_basic == 0u) {
     // No CPUID (pre-Pentium) - nothing more we can read.
     info->vendor = VENDOR_UNKNOWN;
-    lstrcpynW(info->raw_model, kUnknownBrand, 49);
+    lstrcpynW(info->raw_model, kUnknownBrand, kModelStrSize + 1);
     return false;
   }
 
@@ -213,14 +229,14 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
 
   // Brand string lives in extended leaves 0x80000002..0x80000004 (48 bytes).
   if (max_ext >= 0x80000004) {
-    char brand[48];
+    char brand[kModelStrSize];
     for (uint32_t i = 0u; i < 3u; ++i) {
       FillRegInfo(CPUID_BRAND_1ST + i, 0u, regs);
       memcpy(brand + i * 16, regs, 16);
     }
     FormatBrandString(info, brand);
   } else {
-    lstrcpynW(info->raw_model, kUnknownBrand, 49);
+    lstrcpynW(info->raw_model, kUnknownBrand, kModelStrSize + 1);
   }
 
   return true;
@@ -230,11 +246,7 @@ OSINFO_API bool __cdecl GetCPUInfo(CPUID_INFO* cpuinfo) {
   if (cpuinfo == nullptr) {
     return false;
   }
-  if (!g_cpu_detected) {
-    DetectCpu(&g_CPUInfo);
-    g_cpu_detected = true;
-  }
-  *cpuinfo = g_CPUInfo;
+  *cpuinfo = DetectedCpu();
   return true;
 }
 
@@ -243,12 +255,7 @@ OSINFO_API unsigned int __cdecl NumCpuCores() {
 }
 
 OSINFO_API const wchar_t* __cdecl CpuVendor() {
-  CPUID_INFO vendor_info{};
-  if (!GetCPUInfo(&vendor_info)) {
-    return L"Failed to get CPU Vendor.";
-  }
-  const int vendor_id = vendor_info.vendor;
-  switch (vendor_id) {
+  switch (DetectedCpu().vendor) {
     case VENDOR_INTEL:
       return kIntelBrand;
     case VENDOR_AMD:
@@ -267,79 +274,70 @@ OSINFO_API const wchar_t* __cdecl CpuVendor() {
 }
 
 OSINFO_API const wchar_t* __cdecl CpuModel() {
-  if (!GetCPUInfo(&g_CPUInfo)) {
-    return L"Failed to get CPU Model.";
-  }
-  // raw_model lives in the static g_CPUInfo cache, so the pointer stays valid.
-  return g_CPUInfo.raw_model;
+  // raw_model lives in the process-lifetime detection cache, so the pointer stays valid.
+  return DetectedCpu().raw_model;
 }
 
 OSINFO_API bool __cdecl IsCPU64BitCapable() {
-  CPUID_INFO lm_info{};
-  if (!GetCPUInfo(&lm_info)) {
-    return false;
-  }
-  return lm_info.is_64_bit;
+  return DetectedCpu().is_64_bit;
 }
 
 OSINFO_API bool __cdecl CanExecuteSSE() {
   // SSE OS-enablement (CR4.OSFXSR) is not exposed via CPUID, so ask Windows.
-  // IsProcessorFeaturePresent reports CPU and OS support together. Resolve it
-  // dynamically: it is absent on NT 4.0, where SSE state is never OS-saved
-  // anyway, so a missing export correctly maps to "false".
-  typedef BOOL(WINAPI * FnIsProcessorFeaturePresent)(DWORD);
-  static FnIsProcessorFeaturePresent pfnIsProcessorFeaturePresent = nullptr;
-  static bool s_resolved                                          = false;
-  if (!s_resolved) {
-    HMODULE hKernel32            = GetModuleHandleW(kKernel32Dll);
-    pfnIsProcessorFeaturePresent = reinterpret_cast<FnIsProcessorFeaturePresent>(
-        hKernel32 ? GetProcAddress(hKernel32, "IsProcessorFeaturePresent") : nullptr);
-    s_resolved = true;
-  }
-  if (!pfnIsProcessorFeaturePresent) {
-    return false;
-  }
-  return pfnIsProcessorFeaturePresent(PF_XMMI_INSTRUCTIONS_AVAILABLE) != FALSE;
+  // IsProcessorFeaturePresent reports CPU and OS support together; it is absent on
+  // NT 4.0, where SSE state is never OS-saved, so a missing export maps to false.
+  // Immutable for the process, so resolve and evaluate once (thread-safe).
+  static const bool can = []() -> bool {
+    typedef BOOL(WINAPI* FnIsProcessorFeaturePresent)(DWORD);
+    const FnIsProcessorFeaturePresent pfn = reinterpret_cast<FnIsProcessorFeaturePresent>(
+        GetProcAddress(GetModuleHandleW(kKernel32Dll), "IsProcessorFeaturePresent"));
+    return pfn != nullptr && pfn(PF_XMMI_INSTRUCTIONS_AVAILABLE) != FALSE;
+  }();
+  return can;
 }
 
 OSINFO_API bool __cdecl CanExecuteAVX() {
-  // The CPU must support CPUID leaf 1 to report AVX/OSXSAVE.
-  if (GetLeafCount(CPUID_STD_BASE) < 1u) {
-    return false;
-  }
-  uint32_t regs[4];
-  FillRegInfo(1u, 0u, regs);
-  const uint32_t ecx = regs[CPUID_ECX];
-  // OSXSAVE (bit 27) means the OS enabled XSAVE; AVX (bit 28) is CPU support.
-  // Both are required before XGETBV is even safe to execute.
-  if (!BitCheck(ecx, 27u) || !BitCheck(ecx, 28u)) {
-    return false;
-  }
-  // Finally confirm the OS is actually preserving XMM+YMM state.
-  return (ReadXcr0() & kXcr0AvxMask) == kXcr0AvxMask;
+  // Immutable for the process; CPUID + XGETBV are serializing, so evaluate once.
+  static const bool can = []() -> bool {
+    // The CPU must support CPUID leaf 1 to report AVX/OSXSAVE.
+    if (GetLeafCount(CPUID_STD_BASE) < 1u) {
+      return false;
+    }
+    uint32_t regs[4];
+    FillRegInfo(1u, 0u, regs);
+    const uint32_t ecx = regs[CPUID_ECX];
+    // OSXSAVE means the OS enabled XSAVE; AVX is CPU support. Both are required
+    // before XGETBV is even safe to execute.
+    if (!BitCheck(ecx, kEcxOsxsaveBit) || !BitCheck(ecx, kEcxAvxBit)) {
+      return false;
+    }
+    // Finally confirm the OS is actually preserving XMM+YMM state.
+    return (ReadXcr0() & kXcr0AvxMask) == kXcr0AvxMask;
+  }();
+  return can;
 }
 
 OSINFO_API bool __cdecl CanExecuteAVX512() {
-  // OSXSAVE is reported in leaf 1; the AVX512F CPU bit lives in leaf 7.
-  if (GetLeafCount(CPUID_STD_BASE) < 7u) {
-    return false;
-  }
-  uint32_t regs[4];
-  FillRegInfo(1u, 0u, regs);
-  if (!BitCheck(regs[CPUID_ECX], 27u)) { // OSXSAVE: OS enabled XSAVE.
-    return false;
-  }
-  FillRegInfo(7u, 0u, regs);
-  if (!BitCheck(regs[CPUID_EBX], 16u)) { // AVX512F: CPU support.
-    return false;
-  }
-  // OS must preserve opmask + ZMM state in addition to XMM/YMM.
-  return (ReadXcr0() & kXcr0Avx512Mask) == kXcr0Avx512Mask;
+  // Immutable for the process; CPUID + XGETBV are serializing, so evaluate once.
+  static const bool can = []() -> bool {
+    // OSXSAVE is reported in leaf 1; the AVX512F CPU bit lives in leaf 7.
+    if (GetLeafCount(CPUID_STD_BASE) < 7u) {
+      return false;
+    }
+    uint32_t regs[4];
+    FillRegInfo(1u, 0u, regs);
+    if (!BitCheck(regs[CPUID_ECX], kEcxOsxsaveBit)) { // OSXSAVE: OS enabled XSAVE.
+      return false;
+    }
+    FillRegInfo(7u, 0u, regs);
+    if (!BitCheck(regs[CPUID_EBX], kEbxAvx512fBit)) { // AVX512F: CPU support.
+      return false;
+    }
+    // OS must preserve opmask + ZMM state in addition to XMM/YMM.
+    return (ReadXcr0() & kXcr0Avx512Mask) == kXcr0Avx512Mask;
+  }();
+  return can;
 }
-
-// Signature of powrprof!CallNtPowerInformation (Windows 2000+).
-typedef NTSTATUS(
-    WINAPI* FnCallNtPowerInformation)(POWER_INFORMATION_LEVEL, PVOID, ULONG, PVOID, ULONG);
 
 // Fills `out` with one PROCESSOR_POWER_INFORMATION per logical core. The
 // CallNtPowerInformation export is resolved dynamically rather than statically
@@ -348,21 +346,21 @@ typedef NTSTATUS(
 static bool __cdecl QueryProcessorPower(std::vector<PROCESSOR_POWER_INFORMATION>& out) {
   using FnCallNtPowerInformation =
       NTSTATUS(WINAPI*)(POWER_INFORMATION_LEVEL, PVOID, ULONG, PVOID, ULONG);
-  static FnCallNtPowerInformation pfnCallNtPowerInformation = nullptr;
-  static bool s_resolved                                    = false;
-  if (!s_resolved) {
-    // powrprof.dll is not always mapped, so LoadLibrary (not GetModuleHandle).
-    // The handle is intentionally left loaded for the cached pointer's lifetime.
-    HMODULE hPowrProf         = LoadLibraryW(kPowrProfDll);
-    pfnCallNtPowerInformation = reinterpret_cast<FnCallNtPowerInformation>(
-        hPowrProf ? GetProcAddress(hPowrProf, "CallNtPowerInformation") : nullptr);
-    s_resolved = true;
-  }
+  // powrprof.dll is not always mapped, so LoadLibrary (not GetModuleHandle). The
+  // handle is intentionally never freed - kept loaded for the cached pointer's
+  // lifetime. Resolved once via thread-safe magic-static init.
+  static const FnCallNtPowerInformation pfnCallNtPowerInformation =
+      reinterpret_cast<FnCallNtPowerInformation>(
+          GetProcAddress(LoadLibraryW(kPowrProfDll), "CallNtPowerInformation"));
   if (!pfnCallNtPowerInformation) {
     return false;
   }
 
   out.resize(NumCpuCores());
+  if (out.empty()) {
+    // NumCpuCores() is floored at 1, but never index/divide on an empty buffer.
+    return false;
+  }
   const NTSTATUS status = pfnCallNtPowerInformation(
       ProcessorInformation, nullptr, 0, &out[0],
       static_cast<ULONG>(sizeof(PROCESSOR_POWER_INFORMATION) * out.size()));
@@ -382,9 +380,10 @@ OSINFO_API unsigned long __cdecl CpuFreqAvg() {
 }
 
 OSINFO_API unsigned long __cdecl CpuFreqMax() {
-  std::vector<PROCESSOR_POWER_INFORMATION> powerInfo;
-  if (!QueryProcessorPower(powerInfo)) {
-    return 0UL;
-  }
-  return powerInfo[0].MaxMhz;
+  // Max frequency is fixed for the process, so query it once (thread-safe).
+  static const unsigned long max_mhz = []() -> unsigned long {
+    std::vector<PROCESSOR_POWER_INFORMATION> powerInfo;
+    return QueryProcessorPower(powerInfo) ? static_cast<unsigned long>(powerInfo[0].MaxMhz) : 0UL;
+  }();
+  return max_mhz;
 }

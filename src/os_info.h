@@ -19,8 +19,6 @@ extern unsigned long long WinVerFull;
 extern unsigned long RealWinVer;
 extern unsigned long long RealWinVerFull;
 
-inline constexpr wchar_t kOsInfoError[] = L"OSInfo Error";
-
 // For checking specific versions quickly
 extern bool is_winnt;
 extern bool is_win2k;
@@ -37,7 +35,8 @@ extern bool is_win11;
 extern ULONG NT_MAJOR;
 extern ULONG NT_MINOR;
 extern ULONG NT_BUILD;
-extern wchar_t NT_CSD_VERSION[128];
+inline constexpr int kCsdVersionLen = 128;
+extern wchar_t NT_CSD_VERSION[kCsdVersionLen];
 extern USHORT NT_SP_MAJOR;
 extern USHORT NT_SP_MINOR;
 extern USHORT NT_SUITE;
@@ -51,6 +50,9 @@ extern std::string NT_SERVICE_PACK;
 extern std::string NT_FEATURE_VERSION;
 extern std::string NT_POST_STRING;
 
+// Internal string constants
+inline constexpr wchar_t kOsInfoError[] = L"OSInfo Error";
+
 namespace {
   constexpr unsigned long NTVER_40    = 0x0400UL;
   constexpr unsigned long NTVER_2K    = 0x0500UL;
@@ -61,7 +63,6 @@ namespace {
   constexpr unsigned long NTVER_8     = 0x0602UL;
   constexpr unsigned long NTVER_81    = 0x0603UL;
   constexpr unsigned long NTVER_10    = 0x0A00UL;
-  constexpr unsigned long NTVER_11    = 0x0A00UL;
 } // namespace
 
 #ifndef OSINFO_STATIC_LIB
@@ -76,9 +77,6 @@ static bool __cdecl DeInitOsInfoDLL();
 
 // Ensures we are initialized.
 static bool __cdecl EnsureInitialized();
-
-// Convert to float, i.e. for XP it would be 5.1f. Currently unused.
-[[maybe_unused]] static float __cdecl concatToFloat(int major, int minor);
 
 // Pack hi/lo into DWORD hex
 unsigned long __cdecl combineToHex(unsigned long high, unsigned long low);
