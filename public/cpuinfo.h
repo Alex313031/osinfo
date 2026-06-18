@@ -22,8 +22,8 @@ enum CPU_VENDOR {
 // callers should zero-initialize it (e.g. CPUID_INFO info = {};) and pass it to
 // GetCPUInfo(), which fills every field.
 struct CPUID_INFO {
-  wchar_t raw_model[49];  // Brand string, e.g. "Intel(R) Core(TM) i7-..." (48 chars + null)
-  int vendor;             // See CPU_VENDOR
+  wchar_t raw_model[49];  // Model string, e.g. "Intel(R) Core(TM) i7-..." (48 chars + null)
+  int vendor;             // The CPU brand, see CPU_VENDOR above.
   unsigned int num_cores; // Logical cores
   bool is_64_bit;         // Whether CPU is capable of long mode
   bool has_x87;           // On-chip x87 FPU. Available since i486DX/Pentium.

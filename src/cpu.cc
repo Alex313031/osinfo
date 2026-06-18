@@ -18,7 +18,7 @@
 // Vendor string leaf is 12 bytes on all x86 CPUs
 static constexpr size_t kVendorLeafSize = 12u;
 
-// Keep the public raw_model buffer in sync with the brand-string length: it must
+// Keep the public raw_model buffer in sync with the model-string length: it must
 // hold kModelStrSize ASCII chars plus a null terminator.
 static_assert(sizeof(CPUID_INFO::raw_model) / sizeof(wchar_t) == kModelStrSize + 1,
               "CPUID_INFO::raw_model size is out of sync with kModelStrSize");
@@ -121,12 +121,12 @@ static int __cdecl MapVendor(const char vendor[kVendorLeafSize]) {
   return VENDOR_UNKNOWN;
 }
 
-// Copies the (ASCII) CPU brand string into the wide raw_model field, trimming
-// the leading padding spaces that brand strings commonly carry.
-static void __cdecl FormatBrandString(CPUID_INFO* info, const char brand[kModelStrSize]) {
+// Copies the (ASCII) CPU model string into the wide raw_model field, trimming
+// the leading padding spaces that model strings commonly carry.
+static void __cdecl FormatModelString(CPUID_INFO* info, const char model[kModelStrSize]) {
   // Bounded, null-terminated source copy first.
   char ascii[kModelStrSize + 1];
-  memcpy(ascii, brand, kModelStrSize);
+  memcpy(ascii, model, kModelStrSize);
   ascii[kModelStrSize] = '\0';
 
   const char* start = ascii;
@@ -175,7 +175,7 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
   if (max_basic == 0u) {
     // No CPUID (pre-Pentium) - nothing more we can read.
     info->vendor = VENDOR_UNKNOWN;
-    lstrcpynW(info->raw_model, kUnknownBrand, kModelStrSize + 1);
+    lstrcpynW(info->raw_model, kUnknownModel, kModelStrSize + 1);
     return false;
   }
 
@@ -227,16 +227,16 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
     info->is_64_bit = BitCheck(regs[CPUID_EDX], 29u); // Long Mode (LM) bit.
   }
 
-  // Brand string lives in extended leaves 0x80000002..0x80000004 (48 bytes).
+  // Model string lives in extended leaves 0x80000002..0x80000004 (48 bytes).
   if (max_ext >= 0x80000004) {
-    char brand[kModelStrSize];
+    char model[kModelStrSize];
     for (uint32_t i = 0u; i < 3u; ++i) {
       FillRegInfo(CPUID_BRAND_1ST + i, 0u, regs);
-      memcpy(brand + i * 16, regs, 16);
+      memcpy(model + i * 16, regs, 16);
     }
-    FormatBrandString(info, brand);
+    FormatModelString(info, model);
   } else {
-    lstrcpynW(info->raw_model, kUnknownBrand, kModelStrSize + 1);
+    lstrcpynW(info->raw_model, kUnknownModel, kModelStrSize + 1);
   }
 
   return true;

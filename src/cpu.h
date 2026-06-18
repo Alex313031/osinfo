@@ -9,6 +9,7 @@ inline constexpr wchar_t kKernel32Dll[] = L"kernel32.dll";
 inline constexpr wchar_t kNtDllDll[]    = L"ntdll.dll";    // Same for ntdll.dll
 inline constexpr wchar_t kPowrProfDll[] = L"powrprof.dll"; // Loaded on demand (not always mapped)
 
+// Max chars for holding the model string
 inline constexpr size_t kModelStrSize = 48u;
 
 // Human readable manufacturer string constants
@@ -17,7 +18,8 @@ inline constexpr wchar_t kAmdBrand[]     = L"AMD";
 inline constexpr wchar_t kCyrixBrand[]   = L"Cyrix";
 inline constexpr wchar_t kViaBrand[]     = L"VIA";
 inline constexpr wchar_t kCentaurBrand[] = L"Centaur";
-inline constexpr wchar_t kUnknownBrand[] = L"Unknown";
+inline constexpr wchar_t kUnknownBrand[] = L"Unknown Brand";
+inline constexpr wchar_t kUnknownModel[] = L"Unknown Model";
 
 // Not included in powerbase.h
 #ifndef _PROCESSOR_POWER_INFORMATION
