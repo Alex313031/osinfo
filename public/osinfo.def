@@ -12,6 +12,7 @@ DllMain@12@12
 GetCPUInfo
 GetOSNameA
 GetOSNameW
+GetOsInfoVersionA
 GetOsInfoVersionW
 GetRealNTVer
 GetReportedNTVer

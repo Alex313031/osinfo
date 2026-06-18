@@ -933,14 +933,16 @@ void __cdecl NotReachedImpl(const std::string& func_name) {
   }
 }
 
-OSINFO_API const std::wstring __cdecl GetOsInfoVersionW() {
+OSINFO_API std::string const __cdecl GetOsInfoVersionA() {
   if (!EnsureInitialized()) {
-    return std::wstring();
+    return std::string();
   }
-  std::wostringstream wostr;
-  wostr << OSINFO_VERSION_STRING;
-  const std::wstring retval = wostr.str();
-  return retval;
+  return std::to_string(MAJOR_VERSION) + "." + std::to_string(MINOR_VERSION) + "." +
+         std::to_string(BUILD_VERSION);
+}
+
+OSINFO_API std::wstring const __cdecl GetOsInfoVersionW() {
+  return StringToWstring(GetOsInfoVersionA());
 }
 
 OSINFO_API const bool __cdecl IsWinNT4() {
