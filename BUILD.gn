@@ -8,6 +8,8 @@ group("osinfo") {
   public_deps = [
     ":osinfo_dll",
     ":osinfo_static",
+    "test:test_osinfo_shared",
+    "test:test_osinfo_static",
   ]
 }
 

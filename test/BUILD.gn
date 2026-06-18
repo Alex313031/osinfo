@@ -1,0 +1,56 @@
+# Copyright (c) 2026 Alex313031
+
+# Test executables for verifying OSInfo library functions on various OS combinations.
+
+group("test_osinfo") {
+  testonly = true
+  public_deps = [
+    ":test_osinfo_static",
+    ":test_osinfo_shared",
+  ]
+}
+
+executable("test_osinfo_static") {
+  configs -= [ "//build/config/win:windowed_subsystem", ]
+  configs += [
+    "//build/config/win:console_subsystem",
+    "../:osinfo_static_config",
+  ]
+  # This controls branding
+  defines = [ "TEST_OSINFO_STATIC", ]
+
+  sources = [
+    "resource.rc",
+    "test_framework.h",
+    "test_osinfo_static.cc",
+    "version.h",
+  ]
+
+  # Link in the static lib
+  deps = [ "../:osinfo_static", ]
+
+  output_name = "test_osinfo_static"
+}
+
+executable("test_osinfo_shared") {
+  configs -= [ "//build/config/win:windowed_subsystem", ]
+  configs += [
+    "//build/config/win:console_subsystem",
+    "../:osinfo_shared_config",
+  ]
+  defines = [ "TEST_OSINFO_SHARED", ]
+
+  sources = [
+    "resource.rc",
+    "test_framework.h",
+    "test_osinfo_shared.cc",
+    "version.h",
+  ]
+
+  # Builds it, but doesn't link the import lib (you must use GetProcAddress for all functions).
+  # If you change this to deps instead (like osinfo_static below),
+  # then it will link the import lib and you can directly call functions from the .dll.
+  data_deps = [ "../:osinfo_dll", ]
+
+  output_name = "test_osinfo_shared"
+}

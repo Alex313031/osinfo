@@ -1,0 +1,53 @@
+#define APSTUDIO_READONLY_SYMBOLS
+
+#include "version.h"
+
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include <windows.h>
+#undef APSTUDIO_HIDDEN_SYMBOLS
+
+#include <winres.h>
+
+#ifdef __MINGW32__
+#include <winuser.h>
+#endif // __MINGW32__
+
+#undef APSTUDIO_READONLY_SYMBOLS
+
+101 ICON "test_osinfo.ico"
+
+// Version Information
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION
+ PRODUCTVERSION MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK // 0x0000003F
+#ifdef _DEBUG
+ FILEFLAGS VS_FF_DEBUG // 0x00000001L // Debug build
+#else
+ FILEFLAGS VS_FF_RELEASE // 0x00000000L // Release build
+#endif  // _DEBUG
+ FILEOS VOS_NT_WINDOWS32 // 0x00040004L (Windows NT and later)
+ FILETYPE VFT_APP // 0x00000001L
+ FILESUBTYPE VFT2_UNKNOWN // 0x00000000L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0" // 0x0409 = US English, 0x04B0 = Unicode (1200)
+        BEGIN
+            VALUE "Comments", COMMENTS
+            VALUE "CompanyName", COMPANYNAME
+            VALUE "FileDescription", FILE_DESCRIPT
+            VALUE "FileVersion", VERSION_STRING
+            VALUE "InternalName", INTERNAL_NAME
+            VALUE "LegalCopyright", LEGAL_COPYRIGHT
+            VALUE "LegalTrademarks", TRADEMARKS
+            VALUE "OriginalFilename", ORIG_FILENAME
+            VALUE "ProductName", PRODUCT_NAME
+            VALUE "ProductVersion", VERSION_STRING
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
