@@ -44,8 +44,11 @@ std::string NT_FEATURE_VERSION = "";
 std::string NT_POST_STRING     = "";
 
 // Statics (file-local state)
-static IS_WOW64_PROCESS_ pIsWow64Process = nullptr;
-static bool is_initialized               = false;
+static bool is_initialized = false;
+
+// Genuine Windows 11 starts at NT build 22000; anything below that reporting NT
+// 10.0 is real Windows 10. Used to disambiguate the two, which share an NT version.
+static constexpr ULONG kWin11MinBuild = 22000;
 
 #ifndef OSINFO_STATIC_LIB
 HINSTANCE gHinstDLL = nullptr;
@@ -114,13 +117,11 @@ OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi) {
       return S_OK;
     }
     default: {
-      // cbSize doesn't match a known structure; report bad argument rather than
-      // throwing an exception across the DLL boundary.
+      // cbSize doesn't match a known structure (e.g. too small); report bad
+      // argument rather than throwing an exception across the DLL boundary.
       return E_INVALIDARG;
     }
   }
-  // cbSize too small - unsupported structure
-  return E_INVALIDARG;
 }
 
 static bool __cdecl InitOsInfoDll() {
@@ -290,7 +291,7 @@ static bool __cdecl GetRealWinNTVersion() {
         case NTVER_10: {
           // Win11 RTM is build 22000; below that, NTVER_10 is genuine Windows 10.
           // Use the unspoofable REAL_NT_BUILD here, not the shimmable NT_BUILD.
-          if (REAL_NT_BUILD >= 22000) {
+          if (REAL_NT_BUILD >= kWin11MinBuild) {
             is_win11 = true;
           } else {
             is_win10 = true;
@@ -404,6 +405,10 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
   if (!EnsureInitialized()) {
     return std::string();
   }
+
+  // Not every version branch below assigns NT_FEATURE_VERSION, so clear it up front
+  // rather than letting a prior call's value bleed into NT_POST_STRING.
+  NT_FEATURE_VERSION = "";
 
   // Get the service pack
   const bool fallback = REAL_NT_MAJOR < 6;
@@ -578,7 +583,8 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       default:
         debugStream.str("");
         debugStream.clear();
-        debugStream << " Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        debugStream << " Unknown Windows " << NT_MAJOR << "." << NT_MINOR << "." << NT_BUILD
+                    << std::endl;
         OsVer = debugStream.str();
         break;
     }
@@ -661,7 +667,8 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       default:
         debugStream.str("");
         debugStream.clear();
-        debugStream << " Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        debugStream << " Unknown Windows " << NT_MAJOR << "." << NT_MINOR << "." << NT_BUILD
+                    << std::endl;
         OsVer = debugStream.str();
         break;
     }
@@ -730,7 +737,8 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       default:
         debugStream.str("");
         debugStream.clear();
-        debugStream << " Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        debugStream << " Unknown Windows " << NT_MAJOR << "." << NT_MINOR << "." << NT_BUILD
+                    << std::endl;
         OsVer = debugStream.str();
         break;
     }
@@ -770,7 +778,8 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       default:
         debugStream.str("");
         debugStream.clear();
-        debugStream << " - Unknown Windows " << NT_MAJOR << NT_MINOR << NT_BUILD << std::endl;
+        debugStream << " - Unknown Windows " << NT_MAJOR << "." << NT_MINOR << "." << NT_BUILD
+                    << std::endl;
         OsVer = debugStream.str();
         break;
     }
@@ -993,53 +1002,64 @@ OSINFO_API const bool __cdecl IsWin11() {
   return is_win11;
 }
 
+// Real short NT version for the comparison helpers below, with Win10/Win11
+// disambiguated. Both report NT 10.0 (0x0A00), so a genuine Win11 (unspoofable
+// build >= kWin11MinBuild) is lifted to the distinct kWin11 sentinel; every other
+// version passes through as its raw RealWinVer. This is what lets IsWin(kWin11),
+// IsAtMost(kWin10), etc. tell the two apart. Callers must have initialized first.
+static unsigned long __cdecl EffectiveRealWinVer() {
+  if (RealWinVer == NTVER_10 && REAL_NT_BUILD >= kWin11MinBuild) {
+    return kWin11;
+  }
+  return RealWinVer;
+}
+
 OSINFO_API const bool __cdecl IsWin(const unsigned long check_ver) {
   EnsureInitialized();
-  const bool is_ver = (RealWinVer == check_ver);
+  const bool is_ver = (EffectiveRealWinVer() == check_ver);
   return is_ver;
 }
 
 OSINFO_API const bool __cdecl IsAtLeast(const unsigned long check_ver) {
   EnsureInitialized();
-  const bool is_at_least = (RealWinVer >= check_ver);
+  const bool is_at_least = (EffectiveRealWinVer() >= check_ver);
   return is_at_least;
 }
 
 OSINFO_API const bool __cdecl IsAtMost(const unsigned long check_ver) {
   EnsureInitialized();
-  const bool is_at_least = (RealWinVer <= check_ver);
-  return is_at_least;
+  const bool is_at_most = (EffectiveRealWinVer() <= check_ver);
+  return is_at_most;
 }
 
 OSINFO_API const bool __cdecl IsWinNewerThan(const unsigned long check_ver) {
   EnsureInitialized();
-  const bool is_newer = (RealWinVer > check_ver);
+  const bool is_newer = (EffectiveRealWinVer() > check_ver);
   return is_newer;
 }
 
 OSINFO_API const bool __cdecl IsWinOlderThan(const unsigned long check_ver) {
   EnsureInitialized();
-  const bool is_older = (RealWinVer < check_ver);
+  const bool is_older = (EffectiveRealWinVer() < check_ver);
   return is_older;
 }
 
 OSINFO_API const bool __cdecl IsWoW64() {
-  BOOL isWoW64 = false;
-
+  // IsWow64Process is XP+ only; on older systems WoW64 doesn't exist anyway.
   HMODULE hKernel32 = GetModuleHandleW(kKernel32Dll);
   if (IsWinOlderThan(NTVER_XP) || !hKernel32) {
-    pIsWow64Process = nullptr;
-    isWoW64         = false;
-  } else {
-    pIsWow64Process =
-        reinterpret_cast<IS_WOW64_PROCESS_>(GetProcAddress(hKernel32, "IsWow64Process"));
-    if (pIsWow64Process == nullptr) {
-      return false;
-    } else {
-      if (!pIsWow64Process(GetCurrentProcess(), &isWoW64)) {
-        return false;
-      }
-    }
+    return false;
+  }
+
+  const IS_WOW64_PROCESS_ pIsWow64Process =
+      reinterpret_cast<IS_WOW64_PROCESS_>(GetProcAddress(hKernel32, "IsWow64Process"));
+  if (pIsWow64Process == nullptr) {
+    return false;
+  }
+
+  BOOL isWoW64 = FALSE;
+  if (!pIsWow64Process(GetCurrentProcess(), &isWoW64)) {
+    return false;
   }
   return static_cast<bool>(isWoW64);
 }

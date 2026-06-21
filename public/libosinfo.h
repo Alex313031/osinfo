@@ -109,8 +109,11 @@ inline constexpr unsigned long kWin2012R2    = kWin81;
 inline constexpr unsigned long kWinBlue      = kWin2012R2;
 // Windows 10
 inline constexpr unsigned long kWin10 = 0x0A00UL;
-// Windows 11
-inline constexpr unsigned long kWin11 = 0x0A00UL; // Win11 isn't higher
+// Windows 11. Win10 and Win11 both report NT version 10.0 (0x0A00), so this is a
+// distinct, higher sentinel rather than the raw NT value. The version-comparison
+// functions below (IsWin/IsAtLeast/etc.) special-case it: on a real Win11 (build
+// >= 22000) they treat the running OS as kWin11, so it sorts above kWin10.
+inline constexpr unsigned long kWin11 = 0x0B00UL;
 
 // Bool to check if Windows version is exactly the one passed in check_ver
 OSINFO_API const bool __cdecl IsWin(const unsigned long check_ver);

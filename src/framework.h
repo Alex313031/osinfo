@@ -54,6 +54,7 @@
 inline constexpr bool is_dcheck =
 #ifdef DCHECK_ON
     true;
+ #define IS_DCHECK 1
 #else
     false;
 #endif // DCHECK_ON
@@ -61,6 +62,7 @@ inline constexpr bool is_dcheck =
 inline constexpr bool is_debug =
 #if defined(DEBUG) || defined(_DEBUG)
     true;
+ #define IS_DEBUG 1
 #else
     false;
 #endif // DEBUG || _DEBUG
@@ -69,15 +71,55 @@ inline constexpr bool is_debug =
 inline constexpr bool is_x64 =
 #if defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
     true;
- #define IS_X64
+ #define IS_X64 1
 #else
- #define IS_X86
+ #define IS_X86 1
     false;
 #endif // defined(__x86_64__) || defined(_M_X64) || defined(_M_AMD64)
 
-// Sanity check of above
+// Sanity checks of above
 #if defined(IS_X86) && defined(IS_X64)
  #error IS_X86 and IS_X64 both defined!
 #endif
+#if !defined(IS_X86) && !defined(IS_X64)
+ #error IS_X86 or IS_X64 must be defined
+#endif
 
-#endif // OSINFO_FRAMEWORK_H_
+// Build-time diagnostics. #pragma message takes a string literal, so numeric
+// macros must be run through STRINGIZE() (from version.h) and joined with
+// adjacent-literal concatenation; the parenthesized form works on MSVC/GCC/Clang.
+#ifdef IS_DCHECK
+
+ #if defined(IS_X64)
+  #pragma message("Arch: x64")
+ #else
+  #pragma message("Arch: x86")
+ #endif
+
+ #if defined(_MSC_VER)
+  #pragma message("_MSC_VER " STRINGIZE(_MSC_VER))
+ #endif // _MSC_VER
+ // Clang defines __GNUC__ too, so report it as GCC only when it isn't Clang.
+ #if defined(__GNUC__) && !defined(__clang__)
+  #pragma message("GCC version " STRINGIZE(__GNUC__) "." STRINGIZE(__GNUC_MINOR__) "." STRINGIZE(__GNUC_PATCHLEVEL__))
+ #endif // __GNUC__ && !__clang__
+ #if defined(__clang__)
+  #pragma message("Clang version " STRINGIZE(__clang_major__) "." STRINGIZE(__clang_minor__) "." STRINGIZE(__clang_patchlevel__))
+ #endif // __clang__
+ #if defined(__MINGW32__)
+  #pragma message( \
+      "__MINGW32__ " STRINGIZE(__MINGW32_MAJOR_VERSION) "." STRINGIZE(__MINGW32_MINOR_VERSION))
+ #endif // __MINGW32__
+ #if defined(__MINGW64__)
+  #pragma message("__MINGW64__ " STRINGIZE(__MINGW64_VERSION_MAJOR) "." STRINGIZE(__MINGW64_VERSION_MINOR) "." STRINGIZE(__MINGW64_VERSION_BUGFIX))
+ #endif // __MINGW64__
+ #if defined(__WATCOMC__)
+  #pragma message("__WATCOMC__ " STRINGIZE(__WATCOMC__))
+ #endif // __WATCOMC__
+ #if defined(__INTEL_COMPILER)
+  #pragma message("__ICC " STRINGIZE(__INTEL_COMPILER))
+ #endif // __INTEL_COMPILER
+
+#endif  // IS_DCHECK
+
+#endif  // OSINFO_FRAMEWORK_H_

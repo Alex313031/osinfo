@@ -7,9 +7,10 @@
 // <cpuid.h> macros correctly preserve EBX under 32-bit PIC):
 //   MSVC            -> __cpuid / __cpuidex            (<intrin.h>)
 //   GCC/Clang/MinGW -> __cpuid_count / __get_cpuid_max (<cpuid.h>)
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
  #include <intrin.h>
-#else
+#endif
+#if defined(__clang__) || defined(__MINGW32__) || !defined(_MSC_VER)
  #include <cpuid.h>
 #endif
 
