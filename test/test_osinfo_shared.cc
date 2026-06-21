@@ -10,7 +10,7 @@
 #include <libosinfo.h>
 
 // Print a bool as yes/no.
-#define YN(b) ((b) ? L"yes" : L"no")
+#define YN(value) ((value) ? L"yes" : L"no")
 
 // Resolve an export into a local fn_<name> pointer of the given typedef type.
 // (Named fn_<name> to avoid colliding with the dllimport declaration of <name>.)
@@ -126,10 +126,10 @@ int wmain(int argc, wchar_t* argv[]) {
   if (fn_IsWin10)     std::wcout << L"IsWin10:               " << YN(fn_IsWin10()) << L"\n";
   if (fn_IsWin11)     std::wcout << L"IsWin11:               " << YN(fn_IsWin11()) << L"\n";
   if (fn_IsWin)       std::wcout << L"IsWin(kWin10):         " << YN(fn_IsWin(kWin10)) << L"\n";
-  if (fn_IsAtLeast)   std::wcout << L"IsAtLeast(kWin7):      " << YN(fn_IsAtLeast(kWin7)) << L"\n";
+  if (fn_IsAtLeast)   std::wcout << L"IsAtLeast(kWinXP):     " << YN(fn_IsAtLeast(kWinXP)) << L"\n";
   if (fn_IsAtMost)    std::wcout << L"IsAtMost(kWinVista):   " << YN(fn_IsAtMost(kWinVista)) << L"\n";
-  if (fn_IsWinNewerThan) std::wcout << L"IsWinNewerThan(kWinXP):" << YN(fn_IsWinNewerThan(kWinXP)) << L"\n";
-  if (fn_IsWinOlderThan) std::wcout << L"IsWinOlderThan(kWin11):" << YN(fn_IsWinOlderThan(kWin11)) << L"\n";
+  if (fn_IsWinNewerThan) std::wcout << L"IsWinNewerThan(kWin7): " << YN(fn_IsWinNewerThan(kWin7)) << L"\n";
+  if (fn_IsWinOlderThan) std::wcout << L"IsWinOlderThan(kWin10):" << YN(fn_IsWinOlderThan(kWin10)) << L"\n";
 
   std::wcout << L"\n-- CPU --\n";
   if (fn_CpuVendor)         std::wcout << L"CpuVendor:             " << fn_CpuVendor() << L"\n";
@@ -144,10 +144,10 @@ int wmain(int argc, wchar_t* argv[]) {
 
   std::wcout << L"\n-- CPUID_INFO --\n";
   if (fn_GetCPUInfo) {
-    CPUID_INFO ci = {};
-    if (fn_GetCPUInfo(&ci)) {
-      std::wcout << L"GetCPUInfo.raw_model:  " << ci.raw_model << L"\n";
-      std::wcout << L"GetCPUInfo.num_cores:  " << ci.num_cores << L"\n";
+    CPUID_INFO cpu_info = {};
+    if (fn_GetCPUInfo(&cpu_info)) {
+      std::wcout << L"GetCPUInfo.raw_model:  " << cpu_info.raw_model << L"\n";
+      std::wcout << L"GetCPUInfo.num_cores:  " << cpu_info.num_cores << L"\n";
     }
   }
 

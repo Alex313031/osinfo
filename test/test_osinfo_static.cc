@@ -8,7 +8,7 @@
 #include <libosinfo.h>
 
 // Print a bool as yes/no.
-#define YN(b) ((b) ? L"yes" : L"no")
+#define YN(value) ((value) ? L"yes" : L"no")
 
 namespace {
 // Naive ASCII widen, just so the narrow-string getters can print next to the
@@ -57,10 +57,10 @@ int wmain(int argc, wchar_t* argv[]) {
   std::wcout << L"IsWin10:               " << YN(IsWin10()) << L"\n";
   std::wcout << L"IsWin11:               " << YN(IsWin11()) << L"\n";
   std::wcout << L"IsWin(kWin10):         " << YN(IsWin(kWin10)) << L"\n";
-  std::wcout << L"IsAtLeast(kWin7):      " << YN(IsAtLeast(kWin7)) << L"\n";
+  std::wcout << L"IsAtLeast(kWinXP):     " << YN(IsAtLeast(kWinXP)) << L"\n";
   std::wcout << L"IsAtMost(kWinVista):   " << YN(IsAtMost(kWinVista)) << L"\n";
-  std::wcout << L"IsWinNewerThan(kWinXP):" << YN(IsWinNewerThan(kWinXP)) << L"\n";
-  std::wcout << L"IsWinOlderThan(kWin11):" << YN(IsWinOlderThan(kWin11)) << L"\n";
+  std::wcout << L"IsWinNewerThan(kWin7): " << YN(IsWinNewerThan(kWin7)) << L"\n";
+  std::wcout << L"IsWinOlderThan(kWin10):" << YN(IsWinOlderThan(kWin10)) << L"\n";
 
   std::wcout << L"\n-- CPU --\n";
   std::wcout << L"CpuVendor:             " << CpuVendor() << L"\n";
@@ -74,10 +74,10 @@ int wmain(int argc, wchar_t* argv[]) {
   std::wcout << L"CpuFreqMax:            " << CpuFreqMax() << L" MHz.\n";
 
   std::wcout << L"\n-- CPUID_INFO --\n";
-  CPUID_INFO ci = {};
-  if (GetCPUInfo(&ci)) {
-    std::wcout << L"GetCPUInfo.raw_model:  " << ci.raw_model << L"\n";
-    std::wcout << L"GetCPUInfo.num_cores:  " << ci.num_cores << L"\n";
+  CPUID_INFO cpu_info = {};
+  if (GetCPUInfo(&cpu_info)) {
+    std::wcout << L"GetCPUInfo.raw_model:  " << cpu_info.raw_model << L"\n";
+    std::wcout << L"GetCPUInfo.num_cores:  " << cpu_info.num_cores << L"\n";
   }
 
   std::wcout << std::endl;
