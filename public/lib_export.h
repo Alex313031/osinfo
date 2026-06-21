@@ -3,6 +3,8 @@
 
 // NOTE: Don't include this file in your project, include libosinfo.h instead.
 
+// clang-format off
+
 // Tiny helper for making code that can be used for both .dlls and static .libs.
 #ifndef DLL_IMPORT
  #define DLL_IMPORT __declspec(dllimport)
@@ -20,6 +22,8 @@
  #define OSINFO_API DLL_IMPORT
 #elif defined(OSINFO_STATIC_LIB)  // For use by osinfo when building static library.
  #define OSINFO_API
-#endif                            // OSINFO_DLL_EXPORTS
+#endif // OSINFO_DLL_EXPORTS
+
+// clang-format on
 
 #endif // OSINFO_LIB_EXPORT_H_

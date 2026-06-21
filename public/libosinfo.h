@@ -147,53 +147,53 @@ OSINFO_API const bool __cdecl IsWin11();
 // GetProcAddress (you could make up your own). The __cdecl matches the exported
 // functions' calling convention - a mismatch corrupts the stack across the
 // DLL boundary.
-typedef HRESULT (__cdecl* pDllGetVersion)(DLLVERSIONINFO*);
+typedef HRESULT(__cdecl* pDllGetVersion)(DLLVERSIONINFO*);
 
-typedef std::string (__cdecl* pGetOSNameA)();
-typedef std::wstring (__cdecl* pGetOSNameW)();
-typedef std::string (__cdecl* pGetWinVersionA)();
-typedef std::wstring (__cdecl* pGetWinVersionW)();
-typedef std::string (__cdecl* pGetOsInfoVersionA)();
-typedef std::wstring (__cdecl* pGetOsInfoVersionW)();
+typedef std::string(__cdecl* pGetOSNameA)();
+typedef std::wstring(__cdecl* pGetOSNameW)();
+typedef std::string(__cdecl* pGetWinVersionA)();
+typedef std::wstring(__cdecl* pGetWinVersionW)();
+typedef std::string(__cdecl* pGetOsInfoVersionA)();
+typedef std::wstring(__cdecl* pGetOsInfoVersionW)();
 
-typedef unsigned long long (__cdecl* pGetReportedNTVer)();
-typedef unsigned long long (__cdecl* pGetRealNTVer)();
-typedef unsigned long (__cdecl* pGetReportedShortNTVer)();
-typedef unsigned long (__cdecl* pGetRealShortNTVer)();
+typedef unsigned long long(__cdecl* pGetReportedNTVer)();
+typedef unsigned long long(__cdecl* pGetRealNTVer)();
+typedef unsigned long(__cdecl* pGetReportedShortNTVer)();
+typedef unsigned long(__cdecl* pGetRealShortNTVer)();
 
-typedef int (__cdecl* pGetServicePackNumber)();
-typedef std::string (__cdecl* pGetServicePackA)();
-typedef std::wstring (__cdecl* pGetServicePackW)();
+typedef int(__cdecl* pGetServicePackNumber)();
+typedef std::string(__cdecl* pGetServicePackA)();
+typedef std::wstring(__cdecl* pGetServicePackW)();
 
-typedef bool (__cdecl* pIsWin)(const ULONG);
-typedef bool (__cdecl* pIsAtLeast)(const ULONG);
-typedef bool (__cdecl* pIsAtMost)(const ULONG);
-typedef bool (__cdecl* pIsWinNewerThan)(const ULONG);
-typedef bool (__cdecl* pIsWinOlderThan)(const ULONG);
+typedef bool(__cdecl* pIsWin)(const ULONG);
+typedef bool(__cdecl* pIsAtLeast)(const ULONG);
+typedef bool(__cdecl* pIsAtMost)(const ULONG);
+typedef bool(__cdecl* pIsWinNewerThan)(const ULONG);
+typedef bool(__cdecl* pIsWinOlderThan)(const ULONG);
 
-typedef bool (__cdecl* pIsWinNT4)();
-typedef bool (__cdecl* pIsWin2K)();
-typedef bool (__cdecl* pIsWinXP)();
-typedef bool (__cdecl* pIsWin2003)();
-typedef bool (__cdecl* pIsWinVista)();
-typedef bool (__cdecl* pIsWin7)();
-typedef bool (__cdecl* pIsWin8)();
-typedef bool (__cdecl* pIsWin8_1)();
-typedef bool (__cdecl* pIsWin10)();
-typedef bool (__cdecl* pIsWin11)();
-typedef bool (__cdecl* pIsWoW64)();
+typedef bool(__cdecl* pIsWinNT4)();
+typedef bool(__cdecl* pIsWin2K)();
+typedef bool(__cdecl* pIsWinXP)();
+typedef bool(__cdecl* pIsWin2003)();
+typedef bool(__cdecl* pIsWinVista)();
+typedef bool(__cdecl* pIsWin7)();
+typedef bool(__cdecl* pIsWin8)();
+typedef bool(__cdecl* pIsWin8_1)();
+typedef bool(__cdecl* pIsWin10)();
+typedef bool(__cdecl* pIsWin11)();
+typedef bool(__cdecl* pIsWoW64)();
 
 // CPU info (declared in cpuinfo.h).
-typedef bool (__cdecl* pGetCPUInfo)(CPUID_INFO*);
-typedef unsigned int (__cdecl* pNumCpuCores)();
-typedef const wchar_t* (__cdecl* pCpuVendor)();
-typedef const wchar_t* (__cdecl* pCpuModel)();
-typedef bool (__cdecl* pIsCPU64BitCapable)();
-typedef bool (__cdecl* pCanExecuteSSE)();
-typedef bool (__cdecl* pCanExecuteAVX)();
-typedef bool (__cdecl* pCanExecuteAVX512)();
-typedef unsigned long (__cdecl* pCpuFreqAvg)();
-typedef unsigned long (__cdecl* pCpuFreqMax)();
+typedef bool(__cdecl* pGetCPUInfo)(CPUID_INFO*);
+typedef unsigned int(__cdecl* pNumCpuCores)();
+typedef const wchar_t*(__cdecl* pCpuVendor)();
+typedef const wchar_t*(__cdecl* pCpuModel)();
+typedef bool(__cdecl* pIsCPU64BitCapable)();
+typedef bool(__cdecl* pCanExecuteSSE)();
+typedef bool(__cdecl* pCanExecuteAVX)();
+typedef bool(__cdecl* pCanExecuteAVX512)();
+typedef unsigned long(__cdecl* pCpuFreqAvg)();
+typedef unsigned long(__cdecl* pCpuFreqMax)();
 #endif // !OSINFO_STATIC_LIB
 
 #ifdef __cplusplus
