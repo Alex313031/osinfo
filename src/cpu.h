@@ -34,13 +34,13 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
 #endif // !_PROCESSOR_POWER_INFORMATION
 
 /* Miscellaneous constants */
-#define CPUID_EAX          0          // Index of EAX value in array.
-#define CPUID_EBX          1          // Index of EBX value in array.
-#define CPUID_ECX          2          // Index of ECX value in array
-#define CPUID_EDX          3          // Index of EDX value in array.
-#define CPUID_STD_BASE     0x00000000 // Standard leaves base.
-#define CPUID_EXT_BASE     0x80000000 // Extended leaves base.
-#define CPUID_BRAND_1ST    0x80000002 // First brand string leaf.
+#define CPUID_EAX       0          // Index of EAX value in array.
+#define CPUID_EBX       1          // Index of EBX value in array.
+#define CPUID_ECX       2          // Index of ECX value in array
+#define CPUID_EDX       3          // Index of EDX value in array.
+#define CPUID_STD_BASE  0x00000000 // Standard leaves base.
+#define CPUID_EXT_BASE  0x80000000 // Extended leaves base.
+#define CPUID_BRAND_1ST 0x80000002 // First brand string leaf.
 
 #ifdef __cplusplus
 extern "C" {

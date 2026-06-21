@@ -132,12 +132,11 @@ static bool __cdecl InitOsInfoDll() {
 
 static bool __cdecl DeInitOsInfoDLL() {
   // TODO add memory cleanup here.
-  WinVer        = 0UL;
-  WinVerFull    = 0ULL;
+  WinVer         = 0UL;
+  WinVerFull     = 0ULL;
   RealWinVer     = 0UL;
   RealWinVerFull = 0ULL;
-  return (WinVer == 0UL && WinVerFull == 0ULL &&
-          RealWinVer == 0UL && RealWinVerFull == 0ULL);
+  return (WinVer == 0UL && WinVerFull == 0ULL && RealWinVer == 0UL && RealWinVerFull == 0ULL);
 }
 #endif // !OSINFO_STATIC_LIB
 
@@ -148,7 +147,8 @@ static bool __cdecl EnsureInitialized() {
   static const bool initialized = [] {
 #ifndef OSINFO_STATIC_LIB
     if (!is_initialized) {
-      OutputDebugStringW(L"OSInfo: EnsureInitialized() ran before DllMain init; initializing now.\n");
+      OutputDebugStringW(
+          L"OSInfo: EnsureInitialized() ran before DllMain init; initializing now.\n");
     }
 #endif // !OSINFO_STATIC_LIB
     if (!is_initialized) {
@@ -177,8 +177,12 @@ static unsigned long long __cdecl PackNtVerFull(ULONG major, ULONG minor, ULONG 
 
 // Writes the three optional out-params when non-null. Shared by the fallback
 // chain in GetRealVersions below so each tier doesn't repeat the null checks.
-static void __cdecl WriteVersionOut(ULONG* major, ULONG* minor, ULONG* build, ULONG major_val,
-                                    ULONG minor_val, ULONG build_val) {
+static void __cdecl WriteVersionOut(ULONG* major,
+                                    ULONG* minor,
+                                    ULONG* build,
+                                    ULONG major_val,
+                                    ULONG minor_val,
+                                    ULONG build_val) {
   if (major != nullptr) {
     *major = major_val;
   }
@@ -205,7 +209,8 @@ static bool __cdecl GetRealVersions(ULONG* major, ULONG* minor, ULONG* build) {
     //    2600 for XP SP3, 19045 for Win10 22H2).
     using RtlGetNtVersionNumbers_t = void(WINAPI*)(DWORD*, DWORD*, DWORD*);
     static RtlGetNtVersionNumbers_t pfnRtlGetNtVersionNumbers =
-        reinterpret_cast<RtlGetNtVersionNumbers_t>(GetProcAddress(hNtDll, "RtlGetNtVersionNumbers"));
+        reinterpret_cast<RtlGetNtVersionNumbers_t>(
+            GetProcAddress(hNtDll, "RtlGetNtVersionNumbers"));
     if (pfnRtlGetNtVersionNumbers != nullptr) {
       DWORD majorVer = 0, minorVer = 0, buildVer = 0;
       pfnRtlGetNtVersionNumbers(&majorVer, &minorVer, &buildVer);
@@ -251,9 +256,9 @@ static bool __cdecl GetRealWinNTVersion() {
   if (!GetRealVersions(&major, &minor, &build)) {
     success = false;
   } else {
-    REAL_NT_MAJOR = major;
-    REAL_NT_MINOR = minor;
-    REAL_NT_BUILD = build;
+    REAL_NT_MAJOR  = major;
+    REAL_NT_MINOR  = minor;
+    REAL_NT_BUILD  = build;
     RealWinVer     = combineToHex(REAL_NT_MAJOR, REAL_NT_MINOR);
     RealWinVerFull = PackNtVerFull(REAL_NT_MAJOR, REAL_NT_MINOR, REAL_NT_BUILD);
     if (RealWinVer > 0UL) {
@@ -331,8 +336,8 @@ static bool __cdecl GetWinNTVersion() {
   if (!got) {
     osInfo                     = {};
     osInfo.dwOSVersionInfoSize = sizeof osInfo;
-    got = (GetVersionExW(reinterpret_cast<LPOSVERSIONINFOW>(&osInfo)) != 0 &&
-           osInfo.dwMajorVersion != 0);
+    got                        = (GetVersionExW(reinterpret_cast<LPOSVERSIONINFOW>(&osInfo)) != 0 &&
+                                  osInfo.dwMajorVersion != 0);
   }
 
   // Only trust osInfo if one of the calls above succeeded; otherwise the fields
@@ -382,8 +387,8 @@ static std::string const __cdecl GetNTString() {
   // NT Kernels with numbers outside this range don't exist
   if (REAL_NT_MAJOR >= 3 && REAL_NT_MAJOR <= 11) {
     // Define NtVer as human readable string literal separated by decimals
-    NtVer =
-        std::to_string(REAL_NT_MAJOR) + "." + std::to_string(REAL_NT_MINOR) + "." + std::to_string(REAL_NT_BUILD);
+    NtVer = std::to_string(REAL_NT_MAJOR) + "." + std::to_string(REAL_NT_MINOR) + "." +
+            std::to_string(REAL_NT_BUILD);
   }
 
   return NtVer;

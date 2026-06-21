@@ -148,7 +148,7 @@ DWORD __cdecl GetLogicalProcessorCount() {
   // (thread-safe). GetNativeSystemInfo is XP+ only; fall back to GetSystemInfo on
   // NT 4.0/2000.
   static const DWORD count = []() -> DWORD {
-    typedef void(WINAPI* FnGetNativeSystemInfo)(LPSYSTEM_INFO);
+    typedef void(WINAPI * FnGetNativeSystemInfo)(LPSYSTEM_INFO);
     const FnGetNativeSystemInfo pfn = reinterpret_cast<FnGetNativeSystemInfo>(
         GetProcAddress(GetModuleHandleW(kKernel32Dll), "GetNativeSystemInfo"));
     SYSTEM_INFO system_info = {};
@@ -288,7 +288,7 @@ OSINFO_API bool __cdecl CanExecuteSSE() {
   // NT 4.0, where SSE state is never OS-saved, so a missing export maps to false.
   // Immutable for the process, so resolve and evaluate once (thread-safe).
   static const bool can = []() -> bool {
-    typedef BOOL(WINAPI* FnIsProcessorFeaturePresent)(DWORD);
+    typedef BOOL(WINAPI * FnIsProcessorFeaturePresent)(DWORD);
     const FnIsProcessorFeaturePresent pfn = reinterpret_cast<FnIsProcessorFeaturePresent>(
         GetProcAddress(GetModuleHandleW(kKernel32Dll), "IsProcessorFeaturePresent"));
     return pfn != nullptr && pfn(PF_XMMI_INSTRUCTIONS_AVAILABLE) != FALSE;
