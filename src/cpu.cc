@@ -38,22 +38,22 @@ static constexpr unsigned int kEbxAvx512fBit = 16u; // CPUID.7:EBX[16] - AVX-512
 
 // For mapping reported vendor strings to CPU_VENDOR id
 struct VendorMap {
-  const char* id;
+  const char* name;
   int vendor;
 };
 
-// Returns bit n of v as a bool.
-static inline bool __cdecl BitCheck(uint32_t v, unsigned int n) {
-  return ((v >> n) & 1u) != 0u;
+// Returns bit `bit_index` of `value` as a bool.
+static inline bool __cdecl BitCheck(uint32_t value, unsigned int bit_index) {
+  return ((value >> bit_index) & 1u) != 0u;
 }
 
 // One-time CPU detection, cached for the process lifetime. The magic-static init
 // is thread-safe, so concurrent first calls cannot race or double-detect.
 static const CPUID_INFO& DetectedCpu() {
   static const CPUID_INFO info = [] {
-    CPUID_INFO i{};
-    DetectCpu(&i);
-    return i;
+    CPUID_INFO detected{};
+    DetectCpu(&detected);
+    return detected;
   }();
   return info;
 }
@@ -61,19 +61,19 @@ static const CPUID_INFO& DetectedCpu() {
 // Fills regs[4] = {EAX, EBX, ECX, EDX} for the given CPUID leaf/subleaf.
 static void __cdecl FillRegInfo(uint32_t leaf, uint32_t subleaf, uint32_t regs[4]) {
 #if defined(_MSC_VER)
-  int r[4];
-  __cpuidex(r, static_cast<int>(leaf), static_cast<int>(subleaf));
-  regs[CPUID_EAX] = static_cast<uint32_t>(r[CPUID_EAX]);
-  regs[CPUID_EBX] = static_cast<uint32_t>(r[CPUID_EBX]);
-  regs[CPUID_ECX] = static_cast<uint32_t>(r[CPUID_ECX]);
-  regs[CPUID_EDX] = static_cast<uint32_t>(r[CPUID_EDX]);
+  int signed_regs[4];
+  __cpuidex(signed_regs, static_cast<int>(leaf), static_cast<int>(subleaf));
+  regs[CPUID_EAX] = static_cast<uint32_t>(signed_regs[CPUID_EAX]);
+  regs[CPUID_EBX] = static_cast<uint32_t>(signed_regs[CPUID_EBX]);
+  regs[CPUID_ECX] = static_cast<uint32_t>(signed_regs[CPUID_ECX]);
+  regs[CPUID_EDX] = static_cast<uint32_t>(signed_regs[CPUID_EDX]);
 #else
-  unsigned int a = 0u, b = 0u, c = 0u, d = 0u;
-  __cpuid_count(leaf, subleaf, a, b, c, d);
-  regs[CPUID_EAX] = a;
-  regs[CPUID_EBX] = b;
-  regs[CPUID_ECX] = c;
-  regs[CPUID_EDX] = d;
+  unsigned int eax = 0u, ebx = 0u, ecx = 0u, edx = 0u;
+  __cpuid_count(leaf, subleaf, eax, ebx, ecx, edx);
+  regs[CPUID_EAX] = eax;
+  regs[CPUID_EBX] = ebx;
+  regs[CPUID_ECX] = ecx;
+  regs[CPUID_EDX] = edx;
 #endif
 }
 
@@ -113,9 +113,9 @@ static int __cdecl MapVendor(const char vendor[kVendorLeafSize]) {
       {"CyrixInstead", VENDOR_CYRIX},   {"VIA VIA VIA ", VENDOR_VIA}, {"  Shanghai  ", VENDOR_VIA},
       {"CentaurHauls", VENDOR_CENTAUR},
   };
-  for (const VendorMap& v : kVendors) {
-    if (memcmp(vendor, v.id, kVendorLeafSize) == 0) {
-      return v.vendor;
+  for (const VendorMap& entry : kVendors) {
+    if (memcmp(vendor, entry.name, kVendorLeafSize) == 0) {
+      return entry.vendor;
     }
   }
   return VENDOR_UNKNOWN;
@@ -134,11 +134,11 @@ static void __cdecl FormatModelString(CPUID_INFO* info, const char model[kModelS
     ++start;
   }
 
-  size_t i = 0u;
-  for (; start[i] != '\0' && i < kModelStrSize; ++i) {
-    info->raw_model[i] = static_cast<wchar_t>(static_cast<unsigned char>(start[i]));
+  size_t pos = 0u;
+  for (; start[pos] != '\0' && pos < kModelStrSize; ++pos) {
+    info->raw_model[pos] = static_cast<wchar_t>(static_cast<unsigned char>(start[pos]));
   }
-  info->raw_model[i] = L'\0';
+  info->raw_model[pos] = L'\0';
 }
 
 // Returns the OS-reported logical processor count (native count via
@@ -151,13 +151,13 @@ DWORD __cdecl GetLogicalProcessorCount() {
     typedef void(WINAPI* FnGetNativeSystemInfo)(LPSYSTEM_INFO);
     const FnGetNativeSystemInfo pfn = reinterpret_cast<FnGetNativeSystemInfo>(
         GetProcAddress(GetModuleHandleW(kKernel32Dll), "GetNativeSystemInfo"));
-    SYSTEM_INFO si = {};
+    SYSTEM_INFO system_info = {};
     if (pfn) {
-      pfn(&si);
+      pfn(&system_info);
     } else {
-      GetSystemInfo(&si);
+      GetSystemInfo(&system_info);
     }
-    return (si.dwNumberOfProcessors > 0) ? si.dwNumberOfProcessors : 1;
+    return (system_info.dwNumberOfProcessors > 0) ? system_info.dwNumberOfProcessors : 1;
   }();
   return count;
 }
@@ -230,9 +230,9 @@ bool __cdecl DetectCpu(CPUID_INFO* info) {
   // Model string lives in extended leaves 0x80000002..0x80000004 (48 bytes).
   if (max_ext >= 0x80000004) {
     char model[kModelStrSize];
-    for (uint32_t i = 0u; i < 3u; ++i) {
-      FillRegInfo(CPUID_BRAND_1ST + i, 0u, regs);
-      memcpy(model + i * 16, regs, 16);
+    for (uint32_t leaf_index = 0u; leaf_index < 3u; ++leaf_index) {
+      FillRegInfo(CPUID_BRAND_1ST + leaf_index, 0u, regs);
+      memcpy(model + leaf_index * 16, regs, 16);
     }
     FormatModelString(info, model);
   } else {
@@ -373,8 +373,8 @@ OSINFO_API unsigned long __cdecl CpuFreqAvg() {
     return 0UL;
   }
   ULONG total = 0UL;
-  for (const PROCESSOR_POWER_INFORMATION& pi : powerInfo) {
-    total += pi.CurrentMhz;
+  for (const PROCESSOR_POWER_INFORMATION& core_power : powerInfo) {
+    total += core_power.CurrentMhz;
   }
   return total / static_cast<ULONG>(powerInfo.size());
 }

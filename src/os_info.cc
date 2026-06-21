@@ -145,7 +145,7 @@ static bool __cdecl EnsureInitialized() {
   // Initialize exactly once. The magic-static guard is thread-safe, so the static
   // lib's lazy first-use init cannot race; in the .dll, DllMain has normally run
   // InitOsInfoDll() already (under the loader lock).
-  static const bool ok = [] {
+  static const bool initialized = [] {
 #ifndef OSINFO_STATIC_LIB
     if (!is_initialized) {
       OutputDebugStringW(L"OSInfo: EnsureInitialized() ran before DllMain init; initializing now.\n");
@@ -159,7 +159,7 @@ static bool __cdecl EnsureInitialized() {
     }
     return is_initialized;
   }();
-  return ok;
+  return initialized;
 }
 
 // Packs two version parts into one value: (high << 8) | (low & 0xFF), e.g. (6, 1) -> 0x601.
@@ -177,16 +177,16 @@ static unsigned long long __cdecl PackNtVerFull(ULONG major, ULONG minor, ULONG 
 
 // Writes the three optional out-params when non-null. Shared by the fallback
 // chain in GetRealVersions below so each tier doesn't repeat the null checks.
-static void __cdecl WriteVersionOut(ULONG* major, ULONG* minor, ULONG* build, ULONG m, ULONG mi,
-                                    ULONG b) {
+static void __cdecl WriteVersionOut(ULONG* major, ULONG* minor, ULONG* build, ULONG major_val,
+                                    ULONG minor_val, ULONG build_val) {
   if (major != nullptr) {
-    *major = m;
+    *major = major_val;
   }
   if (minor != nullptr) {
-    *minor = mi;
+    *minor = minor_val;
   }
   if (build != nullptr) {
-    *build = b;
+    *build = build_val;
   }
 }
 
@@ -221,10 +221,11 @@ static bool __cdecl GetRealVersions(ULONG* major, ULONG* minor, ULONG* build) {
     static RtlGetVersion_t pfnRtlGetVersion =
         reinterpret_cast<RtlGetVersion_t>(GetProcAddress(hNtDll, "RtlGetVersion"));
     if (pfnRtlGetVersion != nullptr) {
-      OSVERSIONINFOW vi      = {};
-      vi.dwOSVersionInfoSize = sizeof(vi);
-      if (pfnRtlGetVersion(&vi) == STATUS_SUCCESS && vi.dwMajorVersion != 0) {
-        WriteVersionOut(major, minor, build, vi.dwMajorVersion, vi.dwMinorVersion, vi.dwBuildNumber);
+      OSVERSIONINFOW version_info      = {};
+      version_info.dwOSVersionInfoSize = sizeof(version_info);
+      if (pfnRtlGetVersion(&version_info) == STATUS_SUCCESS && version_info.dwMajorVersion != 0) {
+        WriteVersionOut(major, minor, build, version_info.dwMajorVersion,
+                        version_info.dwMinorVersion, version_info.dwBuildNumber);
         return true;
       }
     }
@@ -233,10 +234,11 @@ static bool __cdecl GetRealVersions(ULONG* major, ULONG* minor, ULONG* build) {
   // 3. Last resort for NT 4.0 (no RtlGetVersion/RtlGetNtVersionNumbers). Subject
   //    to app-compat shims on Win8.1+, but this branch is only reached when those
   //    ntdll functions are missing, where the shim infrastructure doesn't exist.
-  OSVERSIONINFOW vi      = {};
-  vi.dwOSVersionInfoSize = sizeof(vi);
-  if (GetVersionExW(&vi) != 0 && vi.dwMajorVersion != 0) {
-    WriteVersionOut(major, minor, build, vi.dwMajorVersion, vi.dwMinorVersion, vi.dwBuildNumber);
+  OSVERSIONINFOW version_info      = {};
+  version_info.dwOSVersionInfoSize = sizeof(version_info);
+  if (GetVersionExW(&version_info) != 0 && version_info.dwMajorVersion != 0) {
+    WriteVersionOut(major, minor, build, version_info.dwMajorVersion, version_info.dwMinorVersion,
+                    version_info.dwBuildNumber);
     return true;
   }
 
@@ -408,8 +410,8 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       NT_SP = L"Service Pack " + std::to_wstring(NT_SP_MAJOR) + L"." + std::to_wstring(NT_SP_MINOR);
     }
   } else {
-    std::wstring SP(NT_CSD_VERSION);
-    NT_SP = SP;
+    std::wstring csd_version(NT_CSD_VERSION);
+    NT_SP = csd_version;
   }
   NT_SERVICE_PACK = WstringToString(NT_SP);
 
@@ -850,8 +852,8 @@ OSINFO_API std::wstring const __cdecl GetServicePackW() {
           L"Service Pack " + std::to_wstring(NT_SP_MAJOR) + L"." + std::to_wstring(NT_SP_MINOR);
     }
   } else {
-    std::wstring SP(NT_CSD_VERSION);
-    service_pack = SP;
+    std::wstring csd_version(NT_CSD_VERSION);
+    service_pack = csd_version;
   }
   return service_pack;
 }
