@@ -50,7 +50,7 @@ static bool is_initialized = false;
 // 10.0 is real Windows 10. Used to disambiguate the two, which share an NT version.
 static constexpr ULONG kWin11MinBuild = 22000;
 
-#ifndef OSINFO_STATIC_LIB
+#ifdef SHARED_OSINFO
 HINSTANCE gHinstDLL = nullptr;
 
 static bool was_static_load = false;
@@ -139,19 +139,19 @@ static bool __cdecl DeInitOsInfoDLL() {
   RealWinVerFull = 0ULL;
   return (WinVer == 0UL && WinVerFull == 0ULL && RealWinVer == 0UL && RealWinVerFull == 0ULL);
 }
-#endif // !OSINFO_STATIC_LIB
+#endif // SHARED_OSINFO
 
 static bool __cdecl EnsureInitialized() {
   // Initialize exactly once. The magic-static guard is thread-safe, so the static
   // lib's lazy first-use init cannot race; in the .dll, DllMain has normally run
   // InitOsInfoDll() already (under the loader lock).
   static const bool initialized = [] {
-#ifndef OSINFO_STATIC_LIB
+#ifdef SHARED_OSINFO
     if (!is_initialized) {
       OutputDebugStringW(
           L"OSInfo: EnsureInitialized() ran before DllMain init; initializing now.\n");
     }
-#endif // !OSINFO_STATIC_LIB
+#endif // SHARED_OSINFO
     if (!is_initialized) {
       is_initialized = GetWinNTVersion() && GetRealWinNTVersion();
     }

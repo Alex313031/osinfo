@@ -16,7 +16,9 @@ group("osinfo") {
 # Builds osinfo.dll
 shared_library("osinfo_dll") {
   configs += [ ":osinfo_private_config", ]
-  defines = [ "OSINFO_DLL_EXPORTS=1", ]
+  # SHARED_OSINFO selects the .dll path; DLL_EXPORT marks this as the DLL build
+  # itself (export symbols). Consumers set only SHARED_OSINFO (see config below).
+  defines = [ "SHARED_OSINFO", "DLL_EXPORT", ]
 
   precompiled_header = "src/framework.h"
   precompiled_source = "src/pch.pch"
@@ -39,7 +41,7 @@ shared_library("osinfo_dll") {
 # Builds libosinfo.a (or .lib for MSVC)
 static_library("osinfo_static") {
   configs += [ ":osinfo_private_config", ]
-  defines = [ "OSINFO_STATIC_LIB=1", ]
+  defines = [ "STATIC_OSINFO", ]
 
   precompiled_header = "src/framework.h"
   precompiled_source = "src/pch.pch"
@@ -67,14 +69,15 @@ config("osinfo_private_config") {
   ]
 }
 
-# Public shared lib config for outside consumers of the .dll
+# Public shared lib config for outside consumers of the .dll. SHARED_OSINFO alone
+# (no DLL_EXPORT) resolves OSINFO_API to dllimport.
 config("osinfo_shared_config") {
-  defines = [ "OSINFO_DLL_IMPORTS=1", "SHARED_OSINFO", ]
+  defines = [ "SHARED_OSINFO", ]
   include_dirs = [ "./public", ]
 }
 
 # Public static lib config for outside consumers of the .lib/.a
 config("osinfo_static_config") {
-  defines = [ "OSINFO_STATIC_LIB=1", "STATIC_OSINFO", ]
+  defines = [ "STATIC_OSINFO", ]
   include_dirs = [ "./public", ]
 }

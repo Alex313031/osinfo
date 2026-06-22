@@ -65,7 +65,7 @@ namespace {
   constexpr unsigned long NTVER_10    = 0x0A00UL;
 } // namespace
 
-#ifndef OSINFO_STATIC_LIB
+#ifdef SHARED_OSINFO
 extern HINSTANCE gHinstDLL;
 
 // Used to init .dll at attach, but use EnsureInitialized() for everything else.
@@ -73,7 +73,7 @@ static bool __cdecl InitOsInfoDll();
 
 // Opposite of InitOsInfoDll, but only to be called privately.
 static bool __cdecl DeInitOsInfoDLL();
-#endif // !OSINFO_STATIC_LIB
+#endif // SHARED_OSINFO
 
 // Ensures we are initialized.
 static bool __cdecl EnsureInitialized();

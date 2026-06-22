@@ -5,24 +5,29 @@
 
 // clang-format off
 
-// Tiny helper for making code that can be used for both .dlls and static .libs.
-#ifndef DLL_IMPORT
- #define DLL_IMPORT __declspec(dllimport)
-#endif
-
-#ifndef DLL_EXPORT
- #define DLL_EXPORT __declspec(dllexport)
-#endif
-
-// Use OSINFO_API for exported functions. When building the DLL, define
-// OSINFO_DLL_EXPORTS to export symbols.
-#if defined(OSINFO_DLL_EXPORTS)   // For use by osinfo when building DLL
- #define OSINFO_API DLL_EXPORT
-#elif defined(OSINFO_DLL_IMPORTS) // Only for use by consumers (of either static lib or .dll).
- #define OSINFO_API DLL_IMPORT
-#elif defined(OSINFO_STATIC_LIB)  // For use by osinfo when building static library.
+// Pick exactly ONE of these when building against osinfo:
+//   STATIC_OSINFO  - building or consuming the static library (.lib/.a)
+//   SHARED_OSINFO  - building or consuming the shared library (.dll)
+//
+// When building the osinfo DLL itself, the build additionally defines DLL_EXPORT
+// so that symbols are exported; consumers leave it undefined and therefore import.
+// A static library has no import/export, so it needs nothing beyond STATIC_OSINFO.
+//
+// OSINFO_API annotates every public function and expands to the correct
+// __declspec (or to nothing for the static lib) based on the above.
+#if defined(STATIC_OSINFO) && defined(SHARED_OSINFO)
+ #error "osinfo: define only one of STATIC_OSINFO or SHARED_OSINFO"
+#elif defined(STATIC_OSINFO)
  #define OSINFO_API
-#endif // OSINFO_DLL_EXPORTS
+#elif defined(SHARED_OSINFO)
+ #if defined(DLL_EXPORT)
+  #define OSINFO_API __declspec(dllexport)
+ #else
+  #define OSINFO_API __declspec(dllimport)
+ #endif
+#else
+ #error "osinfo: define STATIC_OSINFO (static lib) or SHARED_OSINFO (DLL) before including libosinfo.h"
+#endif
 
 // clang-format on
 

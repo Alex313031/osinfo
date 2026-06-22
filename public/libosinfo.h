@@ -5,23 +5,23 @@
 
 #include "cpuinfo.h"
 
-#ifndef OSINFO_STATIC_LIB
+#ifdef SHARED_OSINFO
  #include <shlwapi.h>
-#endif // OSINFO_STATIC_LIB
+#endif // SHARED_OSINFO
 
-// The DLL_IMPORT/DLL_EXPORT/OSINFO_API export macros are defined in lib_export.h which is included
-// transitively via cpuinfo.h above. Consumers should not include either header directly.
+// The OSINFO_API export macro is defined in lib_export.h, included transitively
+// via cpuinfo.h above. Consumers should not include either header directly.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef OSINFO_STATIC_LIB
+#ifdef SHARED_OSINFO
 /* DllGetVersion accepts pointer to DLLVERSIONINFO or DLLVERSIONINFO2.
  * The structure type is determined at runtime by the cbSize field. */
 // Standard version getter function for DLLs
 OSINFO_API HRESULT __cdecl DllGetVersion(DLLVERSIONINFO* pdvi);
-#endif // !OSINFO_STATIC_LIB
+#endif // SHARED_OSINFO
 
 // Returns human readable string like "Windows 7 Professional Service Pack 1"
 OSINFO_API std::string const __cdecl GetOSNameA();
@@ -145,7 +145,7 @@ OSINFO_API const bool __cdecl IsWin8_1();
 OSINFO_API const bool __cdecl IsWin10();
 OSINFO_API const bool __cdecl IsWin11();
 
-#ifndef OSINFO_STATIC_LIB
+#ifdef SHARED_OSINFO
 // Pre-defined typedefs for dynamically resolving osinfo.dll functions with
 // GetProcAddress (you could make up your own). The __cdecl matches the exported
 // functions' calling convention - a mismatch corrupts the stack across the
@@ -197,7 +197,7 @@ typedef bool(__cdecl* pCanExecuteAVX)();
 typedef bool(__cdecl* pCanExecuteAVX512)();
 typedef unsigned long(__cdecl* pCpuFreqAvg)();
 typedef unsigned long(__cdecl* pCpuFreqMax)();
-#endif // !OSINFO_STATIC_LIB
+#endif // SHARED_OSINFO
 
 #ifdef __cplusplus
 } // extern "C"
