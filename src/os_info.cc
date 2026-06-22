@@ -395,6 +395,21 @@ static std::string const __cdecl GetNTString() {
   return NtVer;
 }
 
+// wSuiteMask (NT_SUITE) is a bit field, so individual VER_SUITE_* flags must be
+// tested with & - never ==, which only matches when exactly one flag is set.
+static inline bool __cdecl HasSuite(USHORT flag) {
+  return (NT_SUITE & flag) != 0;
+}
+
+// Nearly every modern Windows sets VER_SUITE_TERMINAL (Remote Desktop is on by
+// default), so it alone does not mean "Terminal Server". A genuine Terminal
+// Server / Remote Desktop Session Host is the one that does NOT also set
+// VER_SUITE_SINGLEUSERTS (the "remote administration only" marker on ordinary
+// installs).
+static inline bool __cdecl IsTerminalServerEdition() {
+  return (NT_SUITE & VER_SUITE_TERMINAL) != 0 && (NT_SUITE & VER_SUITE_SINGLEUSERTS) == 0;
+}
+
 // Use WINNT API functions to get OS and system information, this can be spoofed.
 OSINFO_API std::string const __cdecl GetOSNameA() {
   // Human readable OS name
@@ -430,13 +445,13 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
   }
   if (NT_MAJOR == 4) {
     if (NT_BUILD < 1381) {
-      if (NT_SUITE == VER_SUITE_TERMINAL) {
+      if (HasSuite(VER_SUITE_TERMINAL)) {
         NT_FEATURE_VERSION = " Beta Cairo Build";
       } else {
         NT_FEATURE_VERSION = " Beta Hydra Build";
       }
     } else {
-      if (NT_SUITE == VER_SUITE_TERMINAL) {
+      if (HasSuite(VER_SUITE_TERMINAL)) {
         NT_FEATURE_VERSION = " (Cairo)";
       } else {
         // NT_FEATURE_VERSION = " (Hydra)";
@@ -464,7 +479,7 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
         if (NT_BUILD > 2228 && NT_BUILD < 3790) {
           NT_FEATURE_VERSION = " Beta Whistler Build";
         }
-        if (NT_SUITE == VER_SUITE_WH_SERVER) {
+        if (HasSuite(VER_SUITE_WH_SERVER)) {
           if (NT_BUILD > 1282 && NT_BUILD < 3790) {
             NT_FEATURE_VERSION = " Beta Quattro Build";
           }
@@ -553,8 +568,10 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       NT_FEATURE_VERSION = "24H2 (Hudson Valley Oct. 2024 Update) ";
     } else if (NT_BUILD == 26200) {
       NT_FEATURE_VERSION = "25H2 (Hudson Valley 2 Sep. 2025 Update) ";
-    } else if (NT_BUILD >= 28000) {
-      NT_FEATURE_VERSION = "26H1 (2026 Update) ";
+    } else if (NT_BUILD == 28000) {
+      NT_FEATURE_VERSION = "26H1 (Hudson Valley 3 Feb. 2026 Update) ";
+    } else if (NT_BUILD == 26300) {
+      NT_FEATURE_VERSION = "26H2 (Insiders Preview) ";
     } else {
       NT_FEATURE_VERSION = "(Build " + std::to_string(NT_BUILD) + ") ";
     }
@@ -562,21 +579,37 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
   NT_POST_STRING = NT_SERVICE_PACK + NT_FEATURE_VERSION;
 
   if (NT_MAJOR == 3) {
-    OsVer = "Windows NT 3.x";
+    // wProductType can be unreliable before NT 4.0 SP6, so key off the minor
+    // version: NT 3.1 = 3.10, NT 3.5 = 3.50, NT 3.51 = 3.51.
+    const char* nt3_ver = (NT_MINOR == 10)  ? "3.1"
+                          : (NT_MINOR == 50) ? "3.5"
+                          : (NT_MINOR == 51) ? "3.51"
+                                             : "3.x";
+    if (NT_TYPE == VER_NT_WORKSTATION) {
+      OsVer = std::string("Windows NT Workstation ") + nt3_ver + " ";
+    } else if (NT_MINOR == 10) {
+      // 3.1 server shipped as "Windows NT Advanced Server".
+      OsVer = "Windows NT Advanced Server 3.1 ";
+    } else {
+      OsVer = std::string("Windows NT Server ") + nt3_ver + " ";
+    }
+    OsVer += NT_POST_STRING;
   } else if (NT_MAJOR == 4) {
     // Known to be buggy on NT 4.0, and needs SP6 to work
     switch (NT_MINOR) {
       case 0:
         if (NT_TYPE == VER_NT_WORKSTATION) {
           OsVer = "Windows NT 4.0 Workstation ";
+        } else if (HasSuite(VER_SUITE_EMBEDDEDNT)) {
+          OsVer = "Windows NT 4.0 Embedded ";
+        } else if (IsTerminalServerEdition()) {
+          OsVer = "Windows NT 4.0 Terminal Server ";
+        } else if (HasSuite(VER_SUITE_ENTERPRISE)) {
+          OsVer = "Windows NT 4.0 Server, Enterprise Edition ";
+        } else if (HasSuite(VER_SUITE_SMALLBUSINESS)) {
+          OsVer = "Windows NT 4.0 Small Business Server ";
         } else {
-          if (NT_SUITE == VER_SUITE_TERMINAL) {
-            OsVer = "Windows NT 4.0 Terminal Server ";
-          } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-            OsVer = "Windows NT 4.0 Enterprise Server ";
-          } else {
-            OsVer = "Windows NT 4.0 Server ";
-          }
+          OsVer = "Windows NT 4.0 Server ";
         }
         OsVer += NT_POST_STRING;
         break;
@@ -593,71 +626,61 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
       case 0:
         if (NT_TYPE == VER_NT_WORKSTATION) {
           OsVer = "Windows 2000 Professional " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_DATACENTER)) {
+          // Datacenter also carries the Enterprise bit, so test it first.
+          OsVer = "Windows 2000 Datacenter Server " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_ENTERPRISE)) {
+          OsVer = "Windows 2000 Advanced Server " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_SMALLBUSINESS)) {
+          OsVer = "Windows 2000 Small Business Server " + NT_POST_STRING;
         } else {
-          if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-            OsVer = "Windows 2000 Advanced Server " + NT_POST_STRING;
-          } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-            OsVer = "Windows 2000 Datacenter " + NT_POST_STRING;
-          } else {
-            OsVer = "Windows 2000 Server " + NT_POST_STRING;
-          }
+          OsVer = "Windows 2000 Server " + NT_POST_STRING;
         }
         break;
       case 1:
+        // Media Center and Tablet PC are Pro-based and only identifiable via a
+        // system metric, so check those before the suite-mask editions.
         if (GetSystemMetrics(SM_STARTER) != 0) {
           OsVer = "Windows XP Starter Edition " + NT_POST_STRING;
+        } else if (GetSystemMetrics(SM_MEDIACENTER) != 0) {
+          OsVer = "Windows XP Media Center Edition " + NT_POST_STRING;
         } else if (GetSystemMetrics(SM_TABLETPC) != 0) {
           OsVer = "Windows XP Tablet PC Edition " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_EMBEDDEDNT)) {
+          OsVer = "Windows XP Embedded " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_PERSONAL)) {
+          OsVer = "Windows XP Home Edition " + NT_POST_STRING;
         } else {
-          if (NT_SUITE == VER_SUITE_PERSONAL) {
-            OsVer = "Windows XP Home Edition " + NT_POST_STRING;
-          } else if (NT_SUITE == VER_SUITE_EMBEDDEDNT) {
-            OsVer = "Windows XP Embedded " + NT_POST_STRING;
-          } else {
-            OsVer = "Windows XP Professional " + NT_POST_STRING;
-          }
+          OsVer = "Windows XP Professional " + NT_POST_STRING;
         }
         break;
       case 2:
-        if (NT_SUITE == VER_SUITE_WH_SERVER) {
+        if (HasSuite(VER_SUITE_WH_SERVER)) {
+          // Windows Home Server v1 is built on Server 2003.
           OsVer = "Windows Home Server " + NT_POST_STRING;
+        } else if (NT_TYPE == VER_NT_WORKSTATION) {
+          // The only 5.2 workstation SKU is XP Professional x64 Edition.
+          OsVer = "Windows XP Professional x64 Edition " + NT_POST_STRING;
         } else {
-          if (NT_TYPE == VER_NT_WORKSTATION) {
-            OsVer = "XP x64 " + NT_POST_STRING;
+          // "R2" is reported through a system metric, not the suite mask, so it
+          // composes with whatever edition the suite flags identify below.
+          const std::string r2 = (GetSystemMetrics(SM_SERVERR2) != 0) ? "R2 " : "";
+          if (HasSuite(VER_SUITE_STORAGE_SERVER)) {
+            // Storage Server is its own product line, not a Server 2003 edition.
+            OsVer = "Windows Storage Server 2003 " + r2 + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_COMPUTE_SERVER)) {
+            OsVer = "Windows Server 2003 " + r2 + "Compute Cluster Edition " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_BLADE)) {
+            OsVer = "Windows Server 2003 " + r2 + "Web Edition " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_DATACENTER)) {
+            // Datacenter also carries the Enterprise bit, so test it first.
+            OsVer = "Windows Server 2003 " + r2 + "Datacenter Edition " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_ENTERPRISE)) {
+            OsVer = "Windows Server 2003 " + r2 + "Enterprise Edition " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_SMALLBUSINESS)) {
+            OsVer = "Windows Small Business Server 2003 " + r2 + NT_POST_STRING;
           } else {
-            if (GetSystemMetrics(SM_SERVERR2) == 0) {
-              if (NT_SUITE == VER_SUITE_BLADE) {
-                OsVer = "Windows Server 2003 Web Edition " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_COMPUTE_SERVER) {
-                OsVer = "Windows Server 2003 Compute Cluster Edition " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_STORAGE_SERVER) {
-                OsVer = "Windows Server 2003 Enterprise " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-                OsVer = "Windows Server 2003 Enterprise " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-                OsVer = "Windows Server 2003 Datacenter " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_SMALLBUSINESS) {
-                OsVer = "Windows Server 2003 Small Business Server " + NT_POST_STRING;
-              } else {
-                OsVer = "Windows Server 2003 Standard " + NT_POST_STRING;
-              }
-            } else {
-              if (NT_SUITE == VER_SUITE_BLADE) {
-                OsVer = "Windows Server 2003 R2 Web Edition " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_COMPUTE_SERVER) {
-                OsVer = "Windows Server 2003 R2 Compute Cluster Edition " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_STORAGE_SERVER) {
-                OsVer = "Windows Server 2003 R2 Enterprise " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-                OsVer = "Windows Server 2003 R2 Enterprise " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-                OsVer = "Windows Server 2003 R2 Datacenter " + NT_POST_STRING;
-              } else if (NT_SUITE == VER_SUITE_SMALLBUSINESS) {
-                OsVer = "Windows Server 2003 R2 Small Business Server " + NT_POST_STRING;
-              } else {
-                OsVer = "Windows Server 2003 R2 Standard " + NT_POST_STRING;
-              }
-            }
+            OsVer = "Windows Server 2003 " + r2 + "Standard Edition " + NT_POST_STRING;
           }
         }
         break;
@@ -678,58 +701,73 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
         if (NT_TYPE == VER_NT_WORKSTATION) {
           if (GetSystemMetrics(SM_STARTER) != 0) {
             OsVer = "Windows Vista Starter " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_PERSONAL)) {
+            OsVer = "Windows Vista Home " + NT_POST_STRING;
           } else {
-            if (NT_SUITE == VER_SUITE_PERSONAL) {
-              OsVer = "Windows Vista Home " + NT_POST_STRING;
-            } else {
-              OsVer = "Windows Vista " + NT_POST_STRING;
-            }
+            OsVer = "Windows Vista " + NT_POST_STRING;
           }
+        } else if (HasSuite(VER_SUITE_DATACENTER)) {
+          OsVer = "Windows Server 2008 Datacenter " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_ENTERPRISE)) {
+          OsVer = "Windows Server 2008 Enterprise " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_SMALLBUSINESS)) {
+          OsVer = "Windows Small Business Server 2008 " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_STORAGE_SERVER)) {
+          OsVer = "Windows Storage Server 2008 " + NT_POST_STRING;
         } else {
-          if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-            OsVer = "Windows Server 2008 Enterprise " + NT_POST_STRING;
-          } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-            OsVer = "Windows Server 2008 Datacenter " + NT_POST_STRING;
-          } else {
-            OsVer = "Windows Server 2008 " + NT_POST_STRING;
-          }
+          OsVer = "Windows Server 2008 " + NT_POST_STRING;
         }
         break;
       case 1:
-        if (NT_BUILD == 8400 || NT_SUITE == VER_SUITE_WH_SERVER) {
+        if (NT_BUILD == 8400 || HasSuite(VER_SUITE_WH_SERVER)) {
           OsVer = "Windows Home Server 2011 " + NT_POST_STRING;
-        } else {
-          if (NT_TYPE == VER_NT_WORKSTATION) {
-            if (GetSystemMetrics(SM_STARTER) != 0) {
-              OsVer = "Windows 7 Starter " + NT_POST_STRING;
-            } else {
-              if (NT_SUITE == VER_SUITE_PERSONAL) {
-                OsVer = "Windows 7 Home " + NT_POST_STRING;
-              } else {
-                OsVer = "Windows 7 " + NT_POST_STRING;
-              }
-            }
+        } else if (NT_TYPE == VER_NT_WORKSTATION) {
+          if (GetSystemMetrics(SM_STARTER) != 0) {
+            OsVer = "Windows 7 Starter " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_EMBEDDEDNT)) {
+            OsVer = "Windows Embedded Standard 7 " + NT_POST_STRING;
+          } else if (HasSuite(VER_SUITE_PERSONAL)) {
+            OsVer = "Windows 7 Home " + NT_POST_STRING;
           } else {
-            if (NT_SUITE == VER_SUITE_ENTERPRISE) {
-              OsVer = "Windows Server 2008 R2 Enterprise " + NT_POST_STRING;
-            } else if (NT_SUITE == VER_SUITE_DATACENTER) {
-              OsVer = "Windows Server 2008 R2 Datacenter " + NT_POST_STRING;
-            } else {
-              OsVer = "Windows Server 2008 R2 " + NT_POST_STRING;
-            }
+            OsVer = "Windows 7 " + NT_POST_STRING;
           }
+        } else if (HasSuite(VER_SUITE_DATACENTER)) {
+          OsVer = "Windows Server 2008 R2 Datacenter " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_ENTERPRISE)) {
+          OsVer = "Windows Server 2008 R2 Enterprise " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_SMALLBUSINESS)) {
+          OsVer = "Windows Small Business Server 2011 " + NT_POST_STRING;
+        } else if (HasSuite(VER_SUITE_STORAGE_SERVER)) {
+          OsVer = "Windows Storage Server 2008 R2 " + NT_POST_STRING;
+        } else {
+          OsVer = "Windows Server 2008 R2 " + NT_POST_STRING;
         }
         break;
       case 2:
+        // 2012+ server editions (Standard/Datacenter/Essentials/Foundation) are
+        // not reliably distinguishable from the suite mask; that needs
+        // GetProductInfo (left for a future refactor).
         if (NT_TYPE == VER_NT_WORKSTATION) {
-          OsVer = "Windows 8 " + NT_POST_STRING;
+          if (HasSuite(VER_SUITE_EMBEDDEDNT)) {
+            OsVer = "Windows Embedded 8 Standard " + NT_POST_STRING;
+          } else {
+            OsVer = "Windows 8 " + NT_POST_STRING;
+          }
+        } else if (HasSuite(VER_SUITE_STORAGE_SERVER)) {
+          OsVer = "Windows Storage Server 2012 " + NT_POST_STRING;
         } else {
           OsVer = "Windows Server 2012 " + NT_POST_STRING;
         }
         break;
       case 3:
         if (NT_TYPE == VER_NT_WORKSTATION) {
-          OsVer = "Windows 8.1 " + NT_POST_STRING;
+          if (HasSuite(VER_SUITE_EMBEDDEDNT)) {
+            OsVer = "Windows Embedded 8.1 Industry Pro" + NT_POST_STRING;
+          } else {
+            OsVer = "Windows 8.1 " + NT_POST_STRING;
+          }
+        } else if (HasSuite(VER_SUITE_STORAGE_SERVER)) {
+          OsVer = "Windows Storage Server 2012 R2 " + NT_POST_STRING;
         } else {
           OsVer = "Windows Server 2012 R2 " + NT_POST_STRING;
         }
@@ -763,7 +801,9 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
           if (NT_TYPE == VER_NT_WORKSTATION) {
             OsVer = "Windows 11 " + NT_POST_STRING;
           } else {
-            if (NT_BUILD == 26100) {
+            if (NT_BUILD == 25398) {
+              OsVer = "Windows Server 23H2 " + NT_POST_STRING;
+            } else if (NT_BUILD == 26100) {
               OsVer = "Windows Server 2025 " + NT_POST_STRING;
             } else {
               OsVer = "Windows Server " + NT_POST_STRING;
@@ -783,6 +823,14 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
         OsVer = debugStream.str();
         break;
     }
+  } else if (NT_MAJOR > 10) {
+    // Future Windows we have no name table for yet - report it instead of the old
+    // "out of bounds" message (the >= 10 feature block above already ran).
+    debugStream.str("");
+    debugStream.clear();
+    debugStream << "Windows (NT " << NT_MAJOR << "." << NT_MINOR << " Build " << NT_BUILD << ") "
+                << NT_POST_STRING;
+    OsVer = debugStream.str();
   } else {
     debugStream.str("");
     debugStream.clear();
