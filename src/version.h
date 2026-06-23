@@ -49,7 +49,7 @@
 
 // clang-format off: Version DEFINES left alone
 
-// These next few lines are where we control version number and copyright year
+// These next few lines are where we control version number.
 // Adhere to semver > semver.org
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 7
@@ -72,7 +72,7 @@
  #define _VERSION(major,minor,build) WIDEN(STRINGIZE(major.minor.build))
 #endif // _VERSION
 
-// String constants
+// String constants, mainly for for product branding and copyright.
 #ifndef OSINFO_VERSION_STRING
  #define OSINFO_VERSION_STRING _VERSION(MAJOR_VERSION, MINOR_VERSION, BUILD_VERSION)
  #define COMMENTS        L"https://github.com/Alex313031/osinfo" // Project GitHub URL
@@ -86,6 +86,7 @@
 #endif // OSINFO_VERSION_STRING
 // clang-format on
 
+// For VS_VERSION_INFO in .rc file
 #ifndef VS_FF_RELEASE
  #define VS_FF_RELEASE 0x00000000L
 #endif

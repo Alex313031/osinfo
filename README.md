@@ -43,3 +43,7 @@ Currently, the makefile only supports 32 bit MinGW, and only the .dll. I will up
 The main way this library is compiled and used is via [GN-Legacy](https://github.com/Alex313031/gn-legacy),
 a [GN](https://gn.googlesource.com/gn/), [Ninja](https://ninja-build.org/), and [MinGW](https://www.mingw-w64.org/) toolchain for targeting legacy Windows.  
 See the [README.md](https://github.com/Alex313031/gn-legacy#readme) there for usage.
+
+## License
+This repo is licensed under the BSD 3-Clause License.  
+A copy of the license can be found in the [LICENSE.md](./LICENSE.md) file.

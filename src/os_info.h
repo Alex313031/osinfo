@@ -6,11 +6,11 @@
 // Manual relative include
 #include "../public/libosinfo.h"
 
+typedef BOOL(WINAPI* IS_WOW64_PROCESS_)(HANDLE hProcess, PBOOL Wow64Process);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef BOOL(WINAPI* IS_WOW64_PROCESS_)(HANDLE hProcess, PBOOL Wow64Process);
 
 // These can be spoofed
 extern unsigned long WinVer;
@@ -31,11 +31,12 @@ extern bool is_win81;
 extern bool is_win10;
 extern bool is_win11;
 
+inline constexpr int kCsdVersionLen = 128; // Length of NT_CSD_VERSION
+
 // Spoofable
 extern ULONG NT_MAJOR;
 extern ULONG NT_MINOR;
 extern ULONG NT_BUILD;
-inline constexpr int kCsdVersionLen = 128;
 extern wchar_t NT_CSD_VERSION[kCsdVersionLen];
 extern USHORT NT_SP_MAJOR;
 extern USHORT NT_SP_MINOR;
@@ -102,8 +103,6 @@ static std::wstring const __cdecl StringToWstring(const std::string& str);
 static std::string const __cdecl WstringToString(const std::wstring& wstr);
 
 void __cdecl NotReachedImpl(const std::string& func_name);
-
-#define __FUNC__ __func__
 
 #ifndef NOTREACHED
  #define NOTREACHED()               \

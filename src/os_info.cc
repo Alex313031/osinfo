@@ -581,7 +581,7 @@ OSINFO_API std::string const __cdecl GetOSNameA() {
   if (NT_MAJOR == 3) {
     // wProductType can be unreliable before NT 4.0 SP6, so key off the minor
     // version: NT 3.1 = 3.10, NT 3.5 = 3.50, NT 3.51 = 3.51.
-    const char* nt3_ver = (NT_MINOR == 10)  ? "3.1"
+    const char* nt3_ver = (NT_MINOR == 10)   ? "3.1"
                           : (NT_MINOR == 50) ? "3.5"
                           : (NT_MINOR == 51) ? "3.51"
                                              : "3.x";
